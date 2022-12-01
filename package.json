@@ -1,0 +1,39 @@
+{
+  "name": "dashhd",
+  "version": "0.1.0",
+  "description": "Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js",
+    "doc": "npx jsdoc@3.x --configure ./jsdoc.conf.json --destination ./docs --package ./package.json --readme ./README.md --access all --private --recurse ./lib/",
+    "fmt": "npx -p prettier@2.x -- prettier -w '**/*.{js,md}'",
+    "lint": "npx -p typescript@4.x -- tsc -p ./jsconfig.json",
+    "prepublish": "npx -p jswt@1.x -- reexport",
+    "version": "npm version -m \"chore(release): bump to v%s\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashhive/dashhd.js.git"
+  },
+  "keywords": [
+    "bip39",
+    "bip44",
+    "mnemonic",
+    "seed",
+    "passphrase",
+    "wallet",
+    "hd",
+    "dash"
+  ],
+  "author": "AJ ONeal <aj@therootcompany.com> (https://throotcompany.com/)",
+  "license": "SEE LICENSE IN LICENSE",
+  "bugs": {
+    "url": "https://github.com/dashhive/dashhd.js/issues"
+  },
+  "homepage": "https://github.com/dashhive/dashhd.js#readme",
+  "dependencies": {
+    "@dashincubator/base58check": "^1.2.0",
+    "bip39": "^3.0.4",
+    "hdkey": "github:dashhive/hdkey"
+  }
+}
