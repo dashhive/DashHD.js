@@ -24,7 +24,7 @@ async function main() {
 
   let secret = "";
   if (passPath) {
-    let secretTxt = await Fs.readFile(mnemonicPath, "utf8");
+    let secretTxt = await Fs.readFile(passPath, "utf8");
     secret = secretTxt.trim();
   }
 
