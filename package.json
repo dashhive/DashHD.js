@@ -33,6 +33,7 @@
   "homepage": "https://github.com/dashhive/dashhd.js#readme",
   "dependencies": {
     "@dashincubator/base58check": "^1.2.0",
+    "@dashincubator/ripemd160": "^2.3.0",
     "bip39": "^3.0.4",
     "hdkey": "github:dashhive/hdkey"
   }
