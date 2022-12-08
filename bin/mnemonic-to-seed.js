@@ -33,7 +33,10 @@ async function main() {
   let seed = new Uint8Array(seedBuf.buffer);
   let seedHex = seedBuf.toString("hex");
 
-  console.info(`${seed.length}-byte seed: ${seedHex}`);
+  // stderr
+  console.error(`${seed.length}-byte seed:`);
+  // stdout (to file)
+  console.info(`${seedHex}`);
 }
 
 main()
