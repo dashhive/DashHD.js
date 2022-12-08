@@ -94,7 +94,8 @@ async function main() {
       );
     }
   });
-  console.info(`WIF: ${wif1}`);
+
+  console.info(wif1);
 }
 
 main()

@@ -106,7 +106,6 @@ async function main() {
       let key = await privateRoot.derive(hdpath);
       let wif = await b58c.encode({
         privateKey: key.privateKey.toString("hex"),
-        compressed: true,
       });
 
       let pubKeyHash = await publicKeyToPubKeyHash(key.publicKey);

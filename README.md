@@ -2,6 +2,54 @@
 
 Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 
+# CLI
+
+```sh
+./bin/mnemonic-generate.js
+
+# again cable air agree veteran march surface dragon behind isolate just wreck
+```
+
+```sh
+./bin/mnemonic-to-seed.js
+# Usage: mnemonic-to-seed <./menmonic.txt> [./passphrase.txt]
+
+# f3f1ff73a93aa5b2fa5db7bdabc184e26bd5120fac3345d89133b3e027982f3d5a7b02704b7f03142873bb264498676798dbefa86ff63f18f14d12e61d114be4
+```
+
+```sh
+./bin/seed-to-xkeys.js
+# Usage: seed-to-wif <./seed.hex> [account] [direction]
+
+# xprvA1uHCfBAez3GCjbyU8UWQitSaZ3RUUy8eft7mf8rnH5z6WCQJ6ehHTNAPRes6k6cwimXjhEHoxka79uoQ2Kdyx7BxbGYKGSnkdjfdjXfvjr
+# xpub6EtdcAi4VMbZRDgSaA1WmrqB8asuswgz1toia3YULccxyJXYqdxwqFgeEexVxr8ytJPHZYTrhbYJjqaFumih45awabyaHwUmCvXbGf7sujG
+```
+
+```sh
+./bin/seed-to-wif.js
+# Usage: seed-to-wif <./seed.hex> [account] [direction] [index]
+
+# XD3sNsdXjXvsnGtcbiqj3SCVdGHyHCRWFDaCAhWotxVfudSN4iRt
+```
+
+```sh
+./bin/seed-to-wifs.js
+# Usage:   seed-to-wif <./seed.hex> [fromPath] [toPath]
+# Example: seed-to-wif  ./seed.hex   "0'/0/0"    "1'/0/1"
+```
+
+```txt
+m/44'/5'/0'/0/0: XKHiWYkmDkNnWGP756UCGcuZ21mHGeYdWeCBBHCBGZaf3NYw1SAz
+                 XjxyR1gve94LuKqkMLEeqJbEVM5B5q1ZSx
+m/44'/5'/0'/0/1: XCsy8Qw1fLH7C1UxLjBfTfLpn8DMRK1TMNNE2a5J1F4TyE5UApcK
+                 XxRrwh1xBWig9rfLyiy494u2vj6YXQMsH7
+
+m/44'/5'/1'/0/0: XEWDJiCKuSaNHUoYFaGiTv1QG3p49xc4vx6cbS19CHZFe1TpwvJF
+                 XrX7Ph3rXV9kyzQfcDteCf14xvm8nM5Mmg
+m/44'/5'/1'/0/1: XHTyj295ekRT4UqDnYd5zdHwLZ5iJdQnN8DjH9CQqPxFVipJqYns
+                 XxTRzgDwnED8cPmrnCRRwpnnT3v5VL3KcE
+```
+
 # Fixtures
 
 For the purpose of testing against known-good values, we provide these fixtures.
