@@ -1,3 +1,73 @@
 # dashhd.js
 
 Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
+
+# Fixtures
+
+For the purpose of testing against known-good values, we provide these fixtures.
+
+## Mnemonic
+
+This mnemonic can be used to generate any number of seeds, meaning any number of
+"password-protected" wallets.
+
+```txt
+again cable air agree veteran march surface dragon behind isolate just wreck
+```
+
+**Misnomer Alert**: this is obviously a _passphrase_, but early on the term
+_passphrase_ was mistakenly used to describe a _salt_, so we're stuck calling
+this "mnemonic".
+
+## Seed, WIFs, & Addrs (Empty Password)
+
+If the mnemonic is used _without_ a "password" (or "secret"), it will produce
+this HD Wallet "seed":
+
+```txt
+f3f1ff73a93aa5b2fa5db7bdabc184e26bd5120fac3345d89133b3e027982f3d5a7b02704b7f03142873bb264498676798dbefa86ff63f18f14d12e61d114be4
+```
+
+Given the HD paths `m/44'/5'/0'/0/0` and `m/44'/5'/2'/1/2`, that seed will
+produce these WIFs (Private Keys) and Pay Addresses (PubKey Hashes).
+
+```txt
+                 (account 0, external/receiving, address 0)
+m/44'/5'/0'/0/0: XD3sNsdXjXvsnGtcbiqj3SCVdGHyHCRWFDaCAhWotxVfudSN4iRt (WIF)
+                 XnRtALP7ns8stH6o79RQTiWGeW2SQeetxL                   (Addr)
+
+                 (account 2, internal/change, address 2)
+m/44'/5'/2'/1/2: XJDdTJ1WigKiUdsvofPGmMCHoPd4kpWKD1yGrigJXuwqcxoLUn4W (WIF)
+                 XoMEcuxW4Ki1SXduDjQUdntSYU4PWzhqTC                   (Addr)
+```
+
+## Seed, WIFs, & Addrs (Empty Password)
+
+If the mnemonic is used with the "password" (or "secret") `supersecret123`, it
+will produce this HD Wallet seed:
+
+Secret: `supersecret123`
+
+```txt
+6f9c7acc33e3690d734de56619936d7dce1d3aadf624cdbb09e50a3c978c13234f59112e791910d0cd94c483113dcab0a637cb7f7b85fa78e7af6464e3967713
+```
+
+Given the HD paths `m/44'/5'/0'/0/0` and `m/44'/5'/2'/1/2`, that seed will
+produce these WIFs (Private Keys) and Pay Addresses (PubKey Hashes).
+
+```txt
+                 (account 0, external/receiving, address 0)
+m/44'/5'/0'/0/0: XKHiWYkmDkNnWGP756UCGcuZ21mHGeYdWeCBBHCBGZaf3NYw1SAz (WIF)
+                 XjxyR1gve94LuKqkMLEeqJbEVM5B5q1ZSx                   (Addr)
+
+                 (account 2, internal/change, address 2)
+m/44'/5'/2'/1/2: XBwqVpx9SLtvoscmLgC2AtXoKZi5FxYKtYbPGTyjzsKBxsfAxrmy (WIF)
+                 XhWFxtNSqwTqLYAQ9XQJbfQG3Hj64qLoGt                   (Addr)
+```
+
+**Misnomer Alert**: The so-called "secret" is actually a pbkdf2 _salt_, yet it's
+sometimes also referred to as a "passphrase" or "password"... oh well 🤷‍♂️.
+
+## More Fixtures
+
+See [FIXTURES.md](./FIXTURES.md).
