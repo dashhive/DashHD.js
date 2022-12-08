@@ -3,6 +3,12 @@
   "version": "0.1.1",
   "description": "Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools",
   "main": "index.js",
+  "files": [
+      "bin/",
+      "dashd.js",
+      "index.js",
+      "lib/"
+  ],
   "scripts": {
     "test": "node test.js",
     "doc": "npx jsdoc@3.x --configure ./jsdoc.conf.json --destination ./docs --package ./package.json --readme ./README.md --access all --private --recurse ./lib/",
