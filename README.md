@@ -106,7 +106,7 @@ m/44'/5'/2'/1/2: XJDdTJ1WigKiUdsvofPGmMCHoPd4kpWKD1yGrigJXuwqcxoLUn4W (WIF)
                  XoMEcuxW4Ki1SXduDjQUdntSYU4PWzhqTC                   (Addr)
 ```
 
-## Seed, xprv, WIFs, & Addrs (Empty Password)
+## Seed, xprv, WIFs, & Addrs (With Password)
 
 If the mnemonic is used with the "password" (or "secret") `supersecret123`, it
 will produce this HD Wallet seed:
