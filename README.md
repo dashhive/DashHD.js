@@ -2,6 +2,28 @@
 
 Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 
+# Table of Contents
+
+- CLI utils
+  - mnemonic-generate
+  - mnemonic-to-seed (salted or plain)
+  - seed-to-xkeys (extended public / private keys)
+  - seed-to-wif
+  - seed-to-wifs
+  - xprv-to-wif
+  - xprv-to-wifs
+  - xpub-to-addr
+  - xpub-to-addrs
+- Test Fixtures
+  - Mnemonic
+  - Salted Seed (password)
+  - Plain Seed
+
+<!-- TODO
+- mnemonic-to-wifs
+- mnemonic-to-addrs
+-->
+
 # CLI
 
 ```sh
@@ -28,14 +50,36 @@ Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 ```sh
 ./bin/seed-to-wif.js
 # Usage: seed-to-wif <./seed.hex> [account] [direction] [index]
+```
 
-# XD3sNsdXjXvsnGtcbiqj3SCVdGHyHCRWFDaCAhWotxVfudSN4iRt
+```sh
+./bin/xprv-to-wif.js
+# Usage: xprv-to-wif <./xprv.txt> [index]
+```
+
+```txt
+XD3sNsdXjXvsnGtcbiqj3SCVdGHyHCRWFDaCAhWotxVfudSN4iRt
+```
+
+```sh
+./bin/xpub-to-addr.js
+# Usage: xpub-to-addr <./xpub.txt> [index]
+```
+
+```txt
+XnRtALP7ns8stH6o79RQTiWGeW2SQeetxL
 ```
 
 ```sh
 ./bin/seed-to-wifs.js
 # Usage:   seed-to-wif <./seed.hex> [fromPath] [toPath]
 # Example: seed-to-wif  ./seed.hex   "0'/0/0"    "1'/0/1"
+```
+
+```sh
+./bin/xprv-to-wifs.js
+# Usage:   xprv-to-wif <./xprv.txt> [fromPath] [toPath]
+# Example: xprv-to-wif  ./xprv.txt   "0'/0/0"    "1'/0/1"
 ```
 
 ```txt
@@ -48,6 +92,17 @@ m/44'/5'/1'/0/0: XEWDJiCKuSaNHUoYFaGiTv1QG3p49xc4vx6cbS19CHZFe1TpwvJF
                  XrX7Ph3rXV9kyzQfcDteCf14xvm8nM5Mmg
 m/44'/5'/1'/0/1: XHTyj295ekRT4UqDnYd5zdHwLZ5iJdQnN8DjH9CQqPxFVipJqYns
                  XxTRzgDwnED8cPmrnCRRwpnnT3v5VL3KcE
+```
+
+```sh
+./bin/xpub-to-addrs.js
+# Usage:   xpub-to-addrs <./xpub.txt> [startIndex] [endIndex]
+# Example: xpub-to-addrs  ./xpub.txt  0            1
+```
+
+```txt
+XjxyR1gve94LuKqkMLEeqJbEVM5B5q1ZSx
+XxRrwh1xBWig9rfLyiy494u2vj6YXQMsH7
 ```
 
 # Fixtures
