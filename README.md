@@ -100,6 +100,8 @@ produce these WIFs (Private Keys) and Pay Addresses (PubKey Hashes).
                  (account 0, external/receiving, address 0)
 m/44'/5'/0'/0/0: XD3sNsdXjXvsnGtcbiqj3SCVdGHyHCRWFDaCAhWotxVfudSN4iRt (WIF)
                  XnRtALP7ns8stH6o79RQTiWGeW2SQeetxL                   (Addr)
+m/44'/5'/0'/0/1: XJ8RCLHTg55mBbvv5mF5Ja3DikzBYWxHn5DvKyJoFm2cufBdUSc2
+                 XeGtfXhcgeyLS2EtAnrkbEKNmVVDupZV6p
 
                  (account 2, internal/change, address 2)
 m/44'/5'/2'/1/2: XJDdTJ1WigKiUdsvofPGmMCHoPd4kpWKD1yGrigJXuwqcxoLUn4W (WIF)
@@ -141,6 +143,8 @@ produce these WIFs (Private Keys) and Pay Addresses (PubKey Hashes).
                  (account 0, external/receiving, address 0)
 m/44'/5'/0'/0/0: XKHiWYkmDkNnWGP756UCGcuZ21mHGeYdWeCBBHCBGZaf3NYw1SAz (WIF)
                  XjxyR1gve94LuKqkMLEeqJbEVM5B5q1ZSx                   (Addr)
+m/44'/5'/0'/0/1: XCsy8Qw1fLH7C1UxLjBfTfLpn8DMRK1TMNNE2a5J1F4TyE5UApcK
+                 XxRrwh1xBWig9rfLyiy494u2vj6YXQMsH7
 
                  (account 2, internal/change, address 2)
 m/44'/5'/2'/1/2: XBwqVpx9SLtvoscmLgC2AtXoKZi5FxYKtYbPGTyjzsKBxsfAxrmy (WIF)
