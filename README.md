@@ -5,15 +5,15 @@ Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 # Table of Contents
 
 - CLI utils
-  - mnemonic-generate
-  - mnemonic-to-seed (salted or plain)
-  - seed-to-xkeys (extended public / private keys)
-  - seed-to-wif
-  - seed-to-wifs
-  - xprv-to-wif
-  - xprv-to-wifs
-  - xpub-to-addr
-  - xpub-to-addrs
+  - dash-mnemonic-generate
+  - dash-mnemonic-to-seed (salted or plain)
+  - dash-seed-to-xkeys (extended public / private keys)
+  - dash-seed-to-wif
+  - dash-seed-to-wifs
+  - dash-xprv-to-wif
+  - dash-xprv-to-wifs
+  - dash-xpub-to-addr
+  - dash-xpub-to-addrs
 - Test Fixtures
   - Mnemonic
   - Salted Seed (password)
@@ -25,6 +25,20 @@ Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 -->
 
 # CLI
+
+## Install
+
+```sh
+npm install --location=global dashhd
+```
+
+Or, use without installing:
+
+```sh
+npx -p dashd dash-mnemonic-generate
+```
+
+## Usages
 
 ```sh
 ./bin/mnemonic-generate.js
