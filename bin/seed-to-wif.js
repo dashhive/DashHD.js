@@ -47,8 +47,11 @@ async function main() {
   });
 
   referenceKey = privateRoot
+    //@ts-ignore
     .deriveChild(44 + HdKey.HARDENED_OFFSET)
+    //@ts-ignore
     .deriveChild(coinType + HdKey.HARDENED_OFFSET)
+    //@ts-ignore
     .deriveChild(account + HdKey.HARDENED_OFFSET)
     .deriveChild(direction)
     .deriveChild(index);
@@ -60,6 +63,7 @@ async function main() {
   let directionRoot = privateRoot.derive(
     `m/44'/${coinType}'/${account}'/${direction}`,
   );
+  //@ts-ignore
   referenceKey = directionRoot.deriveChild(index);
   let wif3 = await b58c.encode({
     privateKey: referenceKey.privateKey.toString("hex"),
@@ -67,7 +71,9 @@ async function main() {
   });
 
   let accountRoot = privateRoot.derive(`m/44'/${coinType}'/${account}'`);
+  //@ts-ignore
   directionRoot = accountRoot.deriveChild(direction);
+  //@ts-ignore
   referenceKey = directionRoot.deriveChild(index);
   let wif4 = await b58c.encode({
     privateKey: referenceKey.privateKey.toString("hex"),
