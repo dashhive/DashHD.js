@@ -38,6 +38,13 @@ async function main() {
   // the "addresses" are the paths down from `${direction}/${index}`
   let xKey = privateRoot.derive(`m/44'/${coinType}'/${account}'/${direction}`);
   let xKeys = xKey.toJSON();
+  // TODO would other software know how to reconcile parent-child keys?
+  //let xPrivKey = privateRoot.derive(`m/44'/${coinType}'/${account}'`);
+  //let xPubKey = xPrivKey.deriveChild(0);
+  //let xKeys = {
+  //  parentPrivate: xPrivKey.toJSON().xpriv,
+  //  childPublic: xPubKey.toJSON().xpub,
+  //};
 
   let xprvParts = await b58c.decode(xKeys.xpriv);
   let xprv = await b58c.encode(xprvParts);
