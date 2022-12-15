@@ -9,6 +9,8 @@ let HdKey = require("hdkey");
 let Base58Check = require("@dashincubator/base58check").Base58Check;
 let b58c = Base58Check.create();
 
+let Xaddr = require("./_xaddr.js");
+
 let coinType = 5; // TODO testnet?
 
 async function main() {
@@ -95,7 +97,10 @@ async function main() {
     }
   });
 
+  let addr = await Xaddr.publicKeyToAddr(referenceKey.publicKey);
+
   console.info(wif1);
+  console.error(addr);
 }
 
 main()
