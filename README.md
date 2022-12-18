@@ -6,10 +6,15 @@ Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 
 - CLI utils
   - dash-mnemonic-generate
-  - dash-mnemonic-to-seed (salted or plain)
+  - dash-mnemonic-to-addrs (salted or plain)
+  - dash-mnemonic-to-seed
+  - dash-mnemonic-to-wifs
+  - dash-mnemonic-to-xprv
+  - dash-mnemonic-to-xpub
   - dash-seed-to-xkeys (extended public / private keys)
   - dash-seed-to-wif
   - dash-seed-to-wifs
+  - dash-qr (converts XPubs and PayAddrs, and XPrvs and WIFs to QR Codes)
   - dash-xprv-to-wif
   - dash-xprv-to-wifs
   - dash-xpub-to-addr
@@ -18,11 +23,6 @@ Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
   - Mnemonic
   - Salted Seed (password)
   - Plain Seed
-
-<!-- TODO
-- mnemonic-to-wifs
-- mnemonic-to-addrs
--->
 
 # CLI
 
@@ -47,10 +47,41 @@ npx -p dashd dash-mnemonic-generate
 ```
 
 ```sh
+./bin/mnemonic-to-addrs.js
+# Usage: mnemonic-to-addrs <./mnemonic.txt> [./passphrase.txt] [startPath] [endPath]
+
+# m/44'/5'/0'/0/0:
+# XjxyR1gve94LuKqkMLEeqJbEVM5B5q1ZSx
+```
+
+```sh
 ./bin/mnemonic-to-seed.js
 # Usage: mnemonic-to-seed <./mnemonic.txt> [./passphrase.txt]
 
 # f3f1ff73a93aa5b2fa5db7bdabc184e26bd5120fac3345d89133b3e027982f3d5a7b02704b7f03142873bb264498676798dbefa86ff63f18f14d12e61d114be4
+```
+
+```sh
+./bin/mnemonic-to-wifs.js
+# Usage: mnemonic-to-wifs <./mnemonic.txt> [./passphrase.txt] [startPath] [endPath]
+
+# m/44'/5'/0'/0/0: XKHiWYkmDkNnWGP756UCGcuZ21mHGeYdWeCBBHCBGZaf3NYw1SAz
+#                  XjxyR1gve94LuKqkMLEeqJbEVM5B5q1ZSx
+```
+
+```sh
+./bin/mnemonic-to-xprv.js
+# Usage: mnemonic-to-xprv <./mnemonic.txt> [./passphrase.txt] [hdpath]
+
+# xprvA1WUDWFxdE5UGW1XNTnkZnd3K6bdidZBTtzvtEQziBpS3N8tajC4QKyRLmas7DK4HXK76wSXgMV1uV6RbKyM5f4uu1VmguEhAqvzQwr2mrC
+# xpub6EVpd1nrTbdmUz5zUVKkvvZms8S886H2q7vXgcpcGXMQvAU38GWJx8HuC28Bm8Cizq7dHJvL6armkvL7vvxRpxUxAmpVQF6s8aq5BRBCMrD
+```
+
+```sh
+./bin/mnemonic-to-xpub.js
+# Usage: mnemonic-to-xpub <./mnemonic.txt> [./passphrase.txt] [hdpath]
+
+# xpub6EVpd1nrTbdmUz5zUVKkvvZms8S886H2q7vXgcpcGXMQvAU38GWJx8HuC28Bm8Cizq7dHJvL6armkvL7vvxRpxUxAmpVQF6s8aq5BRBCMrD
 ```
 
 ```sh
