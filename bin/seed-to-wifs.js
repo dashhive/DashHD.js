@@ -21,7 +21,7 @@ async function main() {
   if (!seedPath) {
     console.error("");
     console.error("Usage:");
-    console.error("        seed-to-wif <./seed.hex> [fromPath] [toPath]");
+    console.error("        seed-to-wifs <./seed.hex> [fromPath] [toPath]");
     console.error("");
     console.error("The default from path is \"m/44'/5'/0'/0/0\".");
     console.error(
@@ -34,21 +34,21 @@ async function main() {
     console.error("EXAMPLES");
     console.error("");
     console.error("        (these are all EQUIVALENT)");
-    console.error('        seed-to-wif ./seed.hex "5" "15"');
-    console.error('        seed-to-wif ./seed.hex "0/5" "15"');
-    console.error('        seed-to-wif ./seed.hex "0/5" "0/15"');
-    console.error('        seed-to-wif ./seed.hex "0\'/0/5" "15"');
-    console.error('        seed-to-wif ./seed.hex "m/44\'/5\'/0\'/0/5" "15"');
+    console.error('        seed-to-wifs ./seed.hex "5" "15"');
+    console.error('        seed-to-wifs ./seed.hex "0/5" "15"');
+    console.error('        seed-to-wifs ./seed.hex "0/5" "0/15"');
+    console.error('        seed-to-wifs ./seed.hex "0\'/0/5" "15"');
+    console.error('        seed-to-wifs ./seed.hex "m/44\'/5\'/0\'/0/5" "15"');
     console.error(
-      "        seed-to-wif ./seed.hex \"m/44'/5'/0'/0/5\" \"m/44'/5'/0'/0/15\"",
+      "        seed-to-wifs ./seed.hex \"m/44'/5'/0'/0/5\" \"m/44'/5'/0'/0/15\"",
     );
     console.error("");
-    console.error('        seed-to-wif ./seed.hex "m/44\'/5\'/0\'/0/0" "10"');
+    console.error('        seed-to-wifs ./seed.hex "m/44\'/5\'/0\'/0/0" "10"');
     console.error(
-      "        seed-to-wif ./seed.hex \"m/44'/5'/0'/0/0\" \"1'/10\"",
+      "        seed-to-wifs ./seed.hex \"m/44'/5'/0'/0/0\" \"1'/10\"",
     );
     console.error(
-      "        seed-to-wif ./seed.hex \"m/44'/5'/0'/0/0\" \"3'/1/5\"",
+      "        seed-to-wifs ./seed.hex \"m/44'/5'/0'/0/0\" \"3'/1/5\"",
     );
     console.error("");
     process.exit(1);
