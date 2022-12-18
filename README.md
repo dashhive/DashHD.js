@@ -48,7 +48,7 @@ npx -p dashd dash-mnemonic-generate
 
 ```sh
 ./bin/mnemonic-to-seed.js
-# Usage: mnemonic-to-seed <./menmonic.txt> [./passphrase.txt]
+# Usage: mnemonic-to-seed <./mnemonic.txt> [./passphrase.txt]
 
 # f3f1ff73a93aa5b2fa5db7bdabc184e26bd5120fac3345d89133b3e027982f3d5a7b02704b7f03142873bb264498676798dbefa86ff63f18f14d12e61d114be4
 ```

@@ -11,7 +11,7 @@ async function main() {
   let [mnemonicPath, passPath] = args;
   if (!mnemonicPath) {
     console.error(
-      "Usage: mnemonic-to-seed <./menmonic.txt> [./passphrase.txt]",
+      "Usage: mnemonic-to-seed <./mnemonic.txt> [./passphrase.txt]",
     );
     process.exit(1);
   }
