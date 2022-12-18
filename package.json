@@ -5,7 +5,9 @@
   "main": "index.js",
   "bin": {
     "dash-mnemonic-generate": "./bin/mnemonic-generate.js",
+    "dash-mnemonic-to-addrs": "./bin/mnemonic-to-addrs.js",
     "dash-mnemonic-to-seed": "./bin/mnemonic-to-seed.js",
+    "dash-mnemonic-to-wifs": "./bin/mnemonic-to-wifs.js",
     "dash-mnemonic-to-xprv": "./bin/mnemonic-to-xprv.js",
     "dash-mnemonic-to-xpub": "./bin/mnemonic-to-xpub.js",
     "dash-seed-to-wif": "./bin/seed-to-wif.js",
