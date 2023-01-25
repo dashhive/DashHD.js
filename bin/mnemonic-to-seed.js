@@ -3,7 +3,9 @@
 
 let Fs = require("node:fs/promises");
 
-let Bip39 = require("bip39");
+let DashHD = require("../dashhd.js");
+
+let Dashphrase = require("dashphrase");
 
 async function main() {
   let args = process.argv.slice(2);
@@ -28,10 +30,9 @@ async function main() {
     secret = secretTxt.trim();
   }
 
-  //let seedBuf = await Bip39.mnemonicToSeed(mnemonic);
-  let seedBuf = await Bip39.mnemonicToSeed(mnemonic, secret);
+  let seedBuf = await Dashphrase.toSeed(mnemonic, secret);
   let seed = new Uint8Array(seedBuf.buffer);
-  let seedHex = seedBuf.toString("hex");
+  let seedHex = DashHD.utils.u8ToHex(seedBuf);
 
   // stderr
   console.error(`${seed.length}-byte seed:`);

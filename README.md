@@ -43,6 +43,7 @@ npx -p dashd dash-mnemonic-generate
 ```sh
 ./bin/mnemonic-generate.js
 
+# zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong
 # again cable air agree veteran march surface dragon behind isolate just wreck
 ```
 
@@ -210,8 +211,8 @@ m/44'/5'/2'/1/2: XJDdTJ1WigKiUdsvofPGmMCHoPd4kpWKD1yGrigJXuwqcxoLUn4W (WIF)
 
 ## Seed, xprv, WIFs, & Addrs (With Password)
 
-If the mnemonic is used with the "password" (or "secret") `supersecret123`, it
-will produce this HD Wallet seed:
+If the mnemonic is used with the "password" (or "secret") `supersecret123` or
+`TREZOR`, it will produce this HD Wallet seed:
 
 Secret: `supersecret123`
 

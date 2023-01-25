@@ -5,7 +5,7 @@ let Fs = require("node:fs/promises");
 
 let Xaddr = require("./_xaddr.js");
 
-let Bip39 = require("bip39");
+let Dashphrase = require("dashphrase");
 let HdKey = require("hdkey");
 
 let coinType = 5; // TODO testnet?
@@ -79,7 +79,7 @@ async function main() {
     secret = secretTxt.trim();
   }
 
-  let seedBuf = await Bip39.mnemonicToSeed(mnemonic, secret);
+  let seedBuf = await Dashphrase.toSeed(mnemonic, secret);
 
   let privateRoot = HdKey.fromMasterSeed(seedBuf);
 

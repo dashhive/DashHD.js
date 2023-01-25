@@ -1,9 +1,19 @@
 #!/usr/bin/env node
 "use strict";
 
-let Bip39 = require("bip39");
+let Dashphrase = require("dashphrase");
 
-let mnemonic = Bip39.generateMnemonic();
+async function main() {
+  let bitLen = parseInt(process.argv[2], 10);
+  if (!bitLen) {
+    bitLen = 128;
+  }
 
-// TODO save to file
-console.info(mnemonic);
+  // Ex: 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong'
+  let mnemonic = await Dashphrase.generate(bitLen);
+
+  // TODO save to file
+  console.info(mnemonic);
+}
+
+main();

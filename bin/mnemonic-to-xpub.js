@@ -5,9 +5,8 @@ let Fs = require("node:fs/promises");
 
 let Base58Check = require("@dashincubator/base58check").Base58Check;
 let b58c = Base58Check.create();
+let Dashphrase = require("dashphrase");
 let HdKey = require("hdkey");
-
-let Bip39 = require("bip39");
 
 let purpose = 44; // TODO testnet?
 let coinType = 5; // TODO testnet?
@@ -56,8 +55,7 @@ async function main() {
     secret = secretTxt.trim();
   }
 
-  //let seedBuf = await Bip39.mnemonicToSeed(mnemonic);
-  let seedBuf = await Bip39.mnemonicToSeed(mnemonic, secret);
+  let seedBuf = await Dashphrase.toSeed(mnemonic, secret);
 
   let privateRoot = HdKey.fromMasterSeed(seedBuf);
 

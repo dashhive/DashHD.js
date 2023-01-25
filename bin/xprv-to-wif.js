@@ -3,7 +3,6 @@
 
 let Fs = require("node:fs/promises");
 
-//let Bip39 = require("bip39");
 let HdKey = require("hdkey");
 
 let Base58Check = require("@dashincubator/base58check").Base58Check;

@@ -2,7 +2,7 @@
   "name": "dashhd",
   "version": "0.3.1",
   "description": "Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools",
-  "main": "index.js",
+  "main": "dashhd.js",
   "bin": {
     "dash-mnemonic-generate": "./bin/mnemonic-generate.js",
     "dash-mnemonic-to-addrs": "./bin/mnemonic-to-addrs.js",
@@ -23,16 +23,13 @@
   "files": [
     "bin/",
     "dashd.js",
-    "index.js",
-    "lib/"
+    "jsconfig.json"
   ],
   "scripts": {
-    "test": "node test.js",
-    "doc": "npx jsdoc@3.x --configure ./jsdoc.conf.json --destination ./docs --package ./package.json --readme ./README.md --access all --private --recurse ./lib/",
+    "bump": "npm version -m \"chore(release): bump to v%s\"",
     "fmt": "npx -p prettier@2.x -- prettier -w '**/*.{js,md}'",
     "lint": "npx -p typescript@4.x -- tsc -p ./jsconfig.json",
-    "prepublish": "npx -p jswt@1.x -- reexport",
-    "version": "npm version -m \"chore(release): bump to v%s\""
+    "test": "node test.js"
   },
   "repository": {
     "type": "git",
@@ -57,7 +54,7 @@
   "dependencies": {
     "@dashincubator/base58check": "^1.3.1",
     "@dashincubator/ripemd160": "^2.3.0",
-    "bip39": "^3.0.4",
+    "dashphrase": "^1.3.0",
     "hdkey": "github:dashhive/hdkey",
     "qrcode-svg": "^1.1.0"
   }
