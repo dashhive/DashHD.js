@@ -1,6 +1,5 @@
 var assert = require("assert");
 var BigInteger = require("bigi");
-var Buffer = require("safe-buffer").Buffer;
 var ecurve = require("ecurve");
 var secureRandom = require("secure-random");
 var curve = ecurve.getCurveByName("secp256k1");
