@@ -32,8 +32,8 @@
     "mochify": "^6.3.0"
   },
   "dependencies": {
+    "@dashincubator/ripemd160": "^3.0.0",
     "bs58check": "^2.1.2",
-    "ripemd160": "^2.0.2",
     "secp256k1": "^4.0.0"
   },
   "scripts": {
