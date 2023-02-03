@@ -92,17 +92,6 @@ Newer, "hardened" derivation paths look like this:
 var childkey = await hdkey.derive("m/44'/0'/0'/0/0");
 ```
 
-### `await hdkey.sign(hash)`
-
-Signs the buffer `hash` with the private key using `secp256k1` and returns the
-signature as a buffer.
-
-### `await hdkey.verify(hash, signature)`
-
-Verifies that the `signature` is valid for `hash` and the `hdkey`'s public key
-using `secp256k1`. Returns `true` for valid, `false` for invalid. Throws if the
-`hash` or `signature` is the wrong length.
-
 ### `hdkey.wipePrivateData()`
 
 Wipes all record of the private key from the `hdkey` instance. After calling
