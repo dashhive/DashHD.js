@@ -124,4 +124,8 @@ Get the `hdkey`'s `xpub`, stored as a string.
 
 ## License
 
-MIT
+Copyright © 2023 Dash Incubator \
+Copyright © 2023 AJ ONeal \
+Copyright © 2018-2022 cryptocoinjs
+
+MIT License

@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git://github.com/cryptocoinjs/hdkey"
   },
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "keywords": [
     "bitcoin",
     "bip32",
