@@ -25,7 +25,9 @@ var seed =
 var hdkey = await HDKey.fromMasterSeed(Buffer.from(seed, "hex"));
 console.log(hdkey.privateExtendedKey);
 // => 'xprv9s21ZrQH143K2SKJK9EYRW3Vsg8tWVHRS54hAJasj1eGsQXeWDHLeuu5hpLHRbeKedDJM4Wj9wHHMmuhPF8dQ3bzyup6R7qmMQ1i1FtzNEW'
-console.log(hdkey.publicExtendedKey);
+
+var xpub = await hdkey.getPublicExtendedKey();
+console.log(xpub);
 // => 'xpub661MyMwAqRbcEvPmRAmYndzERhyNux1GoHzHxgzVHMBFkCro3kbbCiDZZ5XabZDyXPj5mH3hktvkjhhUdCQxie5e1g4t2GuAWNbPmsSfDp2'
 ```
 
@@ -73,9 +75,12 @@ var seed =
 var hdkey = await HDKey.fromMasterSeed(Buffer.from(seed, "hex"));
 var childkey = await hdkey.derive("m/0/2147483647'/1");
 
-console.log(childkey.privateExtendedKey);
+var xprv = await childkey.getPrivateExtendedKey();
+console.log(xprv);
 // -> "xprv9zFnWC6h2cLgpmSA46vutJzBcfJ8yaJGg8cX1e5StJh45BBciYTRXSd25UEPVuesF9yog62tGAQtHjXajPPdbRCHuWS6T8XA2ECKADdw4Ef"
-console.log(childkey.publicExtendedKey);
+
+var xpub = await childkey.getPublicExtendedKey();
+console.log(xpub);
 // -> "xpub6DF8uhdarytz3FWdA8TvFSvvAh8dP3283MY7p2V4SeE2wyWmG5mg5EwVvmdMVCQcoNJxGoWaU9DCWh89LojfZ537wTfunKau47EL2dhHKon"
 ```
 
@@ -105,19 +110,19 @@ this method, the instance will behave as if it was created via
 
 ### `hdkey.getPrivateKey()`
 
-Getter/Setter of the `hdkey`'s private key, stored as a buffer.
+Get the `hdkey`'s private key, stored as a buffer.
 
 ### `hdkey.publicKey`
 
-Getter/Setter of the `hdkey`'s public key, stored as a buffer.
+Get the `hdkey`'s public key, stored as a buffer.
 
 ### `await hdkey.getPrivateExtendedKey()`
 
-Getter/Setter of the `hdkey`'s `xprv`, stored as a string.
+Get the `hdkey`'s `xprv`, stored as a string.
 
 ### `await hdkey.getPublicExtendedKey()`
 
-Getter/Setter of the `hdkey`'s `xpub`, stored as a string.
+Get the `hdkey`'s `xpub`, stored as a string.
 
 ## References
 
