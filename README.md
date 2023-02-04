@@ -1,17 +1,49 @@
-# hdkey
+# [DashHD.js](https://github.com/dashhive/dashhd.js)
 
-[![NPM Package](https://img.shields.io/npm/v/hdkey.svg?style=flat-square)](https://www.npmjs.org/package/hdkey)
-[![build status](https://secure.travis-ci.org/cryptocoinjs/hdkey.svg)](http://travis-ci.org/cryptocoinjs/hdkey)
-[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
+Manage HD Keys from HD Wallet Seed and Extended (xprv, xpub) Key Paths. \
+(compatible with the [Hierarchical Deterministic Keys (BIP-32)][bip-32] spec)
 
-A JavaScript component for
-[BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)(hierarchical
-deterministic keys).
+A fully-functional, production-ready reference implementation of Dash HD -
+suitable for learning DASH specs and protocols, and porting to other languages.
 
-## Installation
+```txt
+HD Wallet Seed         : ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
 
-```bash
-npm i --save hdkey
+HD Key Path            :  m/44'/5'/0'/0/0
+WIF                    :  XCGKuZcKDjNhx8DaNKK4xwMMNzspaoToT6CafJAbBfQTi57buhLK
+Address                :  XrZJJfEKRNobcuwWKTD3bDu8ou7XSWPbc9
+
+HD Key Path            :  m/44'/5'/1'/1/1
+WIF                    :  XF9murLtNpJaZXbwMxqJ6BhigEtu9NxfBCJDBokCJcqFkYkz3itz
+Address                :  XueHW2ELMxoXzXcaHMxmwVWhcADE1W5s8c
+```
+
+(that's the canonical _Zeed_ seed, generated from the canonical _Zoomonic_)
+
+[bip-32]: https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
+[bip-39]: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
+[bip-44]: https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki
+[dash-phrase]: https://github.com/dashhive/dashphrase.js
+
+## Install
+
+### Node, Bun, & Bundlers
+
+```sh
+npm install --save @dashincubator/secp256k1@1.x
+npm install --save dashhd@3.x
+```
+
+```js
+let DashHd = require("dashd");
+```
+
+### Browser
+
+```html
+<script src="https://unpkg.com/@dashincubator/secp256k1.js"></script>
+<script src="https://unpkg.com/dashkeys@0.9/dashkeys.js"></script>
+<script src="https://unpkg.com/dashhd@3.x/dashhd.js"></script>
 ```
 
 ## Usage
@@ -19,10 +51,10 @@ npm i --save hdkey
 **example:**
 
 ```js
-var HDKey = require("hdkey");
+var DashHd = require("dashhd");
 var seed =
   "a0c42a9c3ac6abf2ba6a9946ae83af18f51bf1c9fa7dacc4c92513cc4dd015834341c775dcd4c0fac73547c5662d81a9e9361a0aac604a73a321bd9103bce8af";
-var hdkey = await HDKey.fromMasterSeed(Buffer.from(seed, "hex"));
+var hdkey = await DashHd.fromMasterSeed(Buffer.from(seed, "hex"));
 console.log(hdkey.privateExtendedKey);
 
 // => 'xprv9s21ZrQH143K2SKJK9EYRW3Vsg8tWVHRS54hAJasj1eGsQXeWDHLeuu5hpLHRbeKedDJM4Wj9wHHMmuhPF8dQ3bzyup6R7qmMQ1i1FtzNEW'
@@ -32,7 +64,7 @@ console.log(xpub);
 // => 'xpub661MyMwAqRbcEvPmRAmYndzERhyNux1GoHzHxgzVHMBFkCro3kbbCiDZZ5XabZDyXPj5mH3hktvkjhhUdCQxie5e1g4t2GuAWNbPmsSfDp2'
 ```
 
-### `await HDKey.fromMasterSeed(seedBuffer[, versions])`
+### `await DashHd.fromMasterSeed(seedBuffer[, versions])`
 
 Creates an `hdkey` object from a master seed buffer. Accepts an optional
 `versions` object.
@@ -40,10 +72,10 @@ Creates an `hdkey` object from a master seed buffer. Accepts an optional
 ```js
 var seed =
   "a0c42a9c3ac6abf2ba6a9946ae83af18f51bf1c9fa7dacc4c92513cc4dd015834341c775dcd4c0fac73547c5662d81a9e9361a0aac604a73a321bd9103bce8af";
-var hdkey = await HDKey.fromMasterSeed(Buffer.from(seed, "hex"));
+var hdkey = await DashHd.fromMasterSeed(Buffer.from(seed, "hex"));
 ```
 
-### `await HDKey.fromExtendedKey(extendedKey[, versions, skipVerification])`
+### `await DashHd.fromExtendedKey(extendedKey[, versions, skipVerification])`
 
 Creates an `hdkey` object from a `xprv` or `xpub` extended key string. Accepts
 an optional `versions` object & an optional `skipVerification` boolean. If
@@ -53,7 +85,7 @@ uncompressed) coordinate will not will be verified to be on the curve.
 ```js
 var key =
   "xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j";
-var hdkey = await HDKey.fromExtendedKey(key);
+var hdkey = await DashHd.fromExtendedKey(key);
 ```
 
 **or**
@@ -61,7 +93,7 @@ var hdkey = await HDKey.fromExtendedKey(key);
 ```js
 var key =
   "xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt";
-var hdkey = HDKey.fromExtendedKey(key);
+var hdkey = DashHd.fromExtendedKey(key);
 ```
 
 ---
@@ -73,7 +105,7 @@ Derives the `hdkey` at `path` from the current `hdkey`.
 ```js
 var seed =
   "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542";
-var hdkey = await HDKey.fromMasterSeed(Buffer.from(seed, "hex"));
+var hdkey = await DashHd.fromMasterSeed(Buffer.from(seed, "hex"));
 var childkey = await hdkey.derive("m/0/2147483647'/1");
 
 var xprv = await childkey.getPrivateExtendedKey();
@@ -96,7 +128,7 @@ var childkey = await hdkey.derive("m/44'/0'/0'/0/0");
 
 Wipes all record of the private key from the `hdkey` instance. After calling
 this method, the instance will behave as if it was created via
-`HDKey.fromExtendedKey(xpub)`.
+`DashHd.fromExtendedKey(xpub)`.
 
 ### `hdkey.getPrivateKey()`
 
