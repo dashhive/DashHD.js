@@ -416,7 +416,6 @@ var DashHd = ("object" === typeof module && exports) || {};
     let keyInfo = await Utils.decode(base58key);
     let keyBytes = DashKeys.utils.hexToBytes(keyInfo.xprv || keyInfo.xpub);
     let keyDv = new DataView(keyBytes.buffer, 0, keyBytes.byteLength);
-    let myOffset = -4;
 
     //let version = keyDv.getUint32(0, BUFFER_BE);
     // TODO tprv, tpub
@@ -426,13 +425,13 @@ var DashHd = ("object" === typeof module && exports) || {};
       "Version mismatch: does not match private or public",
     );
 
-    hdkey.depth = keyDv.getUint8(myOffset + 4);
-    hdkey.parentFingerprint = keyDv.getUint32(myOffset + 5, BUFFER_BE);
-    hdkey.index = keyDv.getUint32(myOffset + 9, BUFFER_BE);
-    hdkey.chainCode = keyBytes.subarray(myOffset + 13, myOffset + 45);
+    hdkey.depth = keyDv.getUint8(0);
+    hdkey.parentFingerprint = keyDv.getUint32(1, BUFFER_BE);
+    hdkey.index = keyDv.getUint32(5, BUFFER_BE);
+    hdkey.chainCode = keyBytes.subarray(9, 41);
 
-    let key = keyBytes.subarray(myOffset + 45);
-    if (keyDv.getUint8(myOffset + 45) === 0) {
+    let key = keyBytes.subarray(41);
+    if (keyDv.getUint8(41) === 0) {
       // private
       assert(
         version === versions.private,
