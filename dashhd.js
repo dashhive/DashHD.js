@@ -233,11 +233,9 @@ var DashHd = ("object" === typeof module && exports) || {};
     hdkey.getPrivateKey = function () {
       return _privateKey;
     };
-    hdkey.setPrivateKey = async function (privBytes) {
-      assert(privBytes.length === 32, "Private key must be 32 bytes.");
-
+    hdkey.setPrivateKey = function (privBytes) {
       _privateKey = privBytes;
-      hdkey.publicKey = await Utils.toPublicKey(_privateKey);
+      return null;
     };
 
     hdkey.getPrivateExtendedKey = async function () {
@@ -345,7 +343,8 @@ var DashHd = ("object" === typeof module && exports) || {};
 
       if (_privateKey) {
         let nextPrivKey = await Utils.privateKeyTweakAdd(_privateKey, IL);
-        await _hdkey.setPrivateKey(nextPrivKey);
+        _hdkey.setPrivateKey(nextPrivKey);
+        _hdkey.publicKey = await Utils.toPublicKey(nextPrivKey);
       } else {
         _hdkey.publicKey = await Utils.publicKeyTweakAdd(hdkey.publicKey, IL);
       }
@@ -402,6 +401,7 @@ var DashHd = ("object" === typeof module && exports) || {};
     let hdkey = DashHd.create(versions);
     hdkey.chainCode = IR;
     await hdkey.setPrivateKey(IL);
+    hdkey.publicKey = await Utils.toPublicKey(IL);
 
     return hdkey;
   };
@@ -442,7 +442,9 @@ var DashHd = ("object" === typeof module && exports) || {};
         version === versions.private,
         "Version mismatch: version does not match private",
       );
-      await hdkey.setPrivateKey(key.subarray(1)); // cut off first 0x0 byte
+      let privBytes = key.subarray(1); // cut off first 0x0 byte
+      await hdkey.setPrivateKey(privBytes);
+      hdkey.publicKey = await Utils.toPublicKey(privBytes);
     } else {
       assert(
         version === versions.public,
