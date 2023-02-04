@@ -1,3 +1,9 @@
+## 3.0.0 / 2023-02-03
+
+- Hard Fork / Rebrand to DashHD.js
+- Complete refactor to WebCrypto, and async/await, and $DASH Tools
+- API redesign for consistency with $DASH Tools
+
 ## 2.1.0 / 2023-01-18
 
 - Add `skipVerification` option to `HDKey.fromExtendedKey()` to allow skipping
