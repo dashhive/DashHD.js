@@ -39,10 +39,8 @@
  * @prop {HDMaybeGetString} getPrivateExtendedKey
  * @prop {HDMaybeGetBuffer} getPrivateKey
  * @prop {HDGetString} getPublicExtendedKey
- * @prop {HDSetBuffer} setPublicKey
  * @prop {HDSetBuffer} setPrivateKey
  * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
- * @prop {Function} _setPublicKey
  */
 
 /** @type {DashHD} */
@@ -235,28 +233,11 @@ var DashHd = ("object" === typeof module && exports) || {};
     hdkey.getPrivateKey = function () {
       return _privateKey;
     };
-    hdkey.setPrivateKey = async function (value) {
-      assert(value.length === 32, "Private key must be 32 bytes.");
+    hdkey.setPrivateKey = async function (privBytes) {
+      assert(privBytes.length === 32, "Private key must be 32 bytes.");
 
-      _privateKey = value;
-      hdkey.publicKey = await Utils.toPublicKey(value);
-    };
-
-    hdkey.setPublicKey = async function (value) {
-      assert(
-        value.length === 33 || value.length === 65,
-        "Public key must be 33 or 65 bytes.",
-      );
-      let publicKey = await Utils.publicKeyNormalize(value);
-      await hdkey._setPublicKey(publicKey);
-    };
-
-    /**
-     * @param {Uint8Array} publicKey
-     */
-    hdkey._setPublicKey = async function (publicKey) {
-      hdkey.publicKey = publicKey;
-      _privateKey = null;
+      _privateKey = privBytes;
+      hdkey.publicKey = await Utils.toPublicKey(_privateKey);
     };
 
     hdkey.getPrivateExtendedKey = async function () {
@@ -366,8 +347,7 @@ var DashHd = ("object" === typeof module && exports) || {};
         let nextPrivKey = await Utils.privateKeyTweakAdd(_privateKey, IL);
         await _hdkey.setPrivateKey(nextPrivKey);
       } else {
-        let nextPubKey = await Utils.publicKeyTweakAdd(hdkey.publicKey, IL);
-        await _hdkey.setPublicKey(nextPubKey);
+        _hdkey.publicKey = await Utils.publicKeyTweakAdd(hdkey.publicKey, IL);
       }
 
       return _hdkey;
@@ -468,10 +448,13 @@ var DashHd = ("object" === typeof module && exports) || {};
         version === versions.public,
         "Version mismatch: version does not match public",
       );
-      if (skipVerification) {
-        await hdkey._setPublicKey(key);
-      } else {
-        await hdkey.setPublicKey(key);
+      assert(
+        key.length === 33 || key.length === 65,
+        "Public key must be 33 or 65 bytes.",
+      );
+      hdkey.publicKey = key;
+      if (!skipVerification) {
+        hdkey.publicKey = await Utils.publicKeyNormalize(hdkey.publicKey);
       }
     }
 
