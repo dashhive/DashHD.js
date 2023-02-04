@@ -35,6 +35,7 @@
  * @prop {HDVersions} versions - magic bytes for base58 prefix
  * @prop {HDDerivePath} derive - derive a full hd path from the given root
  * @prop {HDDeriveChild} deriveChild - get the next child xkey (in a path segment)
+ * @prop {HDDeriveChild} _deriveChild - helper
  * @prop {HDFingerprint} getFingerprint
  * @prop {HDMaybeGetString} getPrivateExtendedKey
  * @prop {HDMaybeGetBuffer} getPrivateKey
@@ -323,14 +324,34 @@ var DashHd = ("object" === typeof module && exports) || {};
         let hardened = c.length > 1 && c[c.length - 1] === "'";
         let childIndex = parseInt(c, 10); // & (HARDENED_OFFSET - 1)
         assert(childIndex < HARDENED_OFFSET, "Invalid index");
-        if (hardened) {
-          childIndex += HARDENED_OFFSET;
-        }
 
-        _hdkey = await _hdkey.deriveChild(childIndex);
+        _hdkey = await _hdkey.deriveChild(childIndex, hardened);
       }
 
       return _hdkey;
+    };
+
+    hdkey.deriveChild = async function (index, hardened) {
+      for (;;) {
+        try {
+          //@ts-ignore
+          return await hdkey._deriveChild(index, hardened);
+        } catch (e) {
+          // In essence:
+          // if it couldn't produce a public key, just go on the next one
+          //
+          // More precisely:
+          //
+          // throw if IL >= n || (privateKey + IL) === 0
+          // In case parse256(IL) >= n or ki == 0,
+          // one should proceed with the next value for i
+
+          // throw if IL >= n || (g**IL + publicKey) is infinity
+          // In case parse256(IL) >= n or Ki is the point at infinity,
+          // one should proceed with the next value for i
+          index += 1;
+        }
+      }
     };
 
     // IMPORTANT: never allow `await` (or other async) between writing to
@@ -339,73 +360,41 @@ var DashHd = ("object" === typeof module && exports) || {};
     let _indexBuffer = new Uint8Array(4);
     let _indexDv = new DataView(_indexBuffer.buffer);
 
-    hdkey.deriveChild = async function (index) {
-      let isHardened = index >= HARDENED_OFFSET;
-      let offset = 0;
-      _indexDv.setUint32(offset, index, BUFFER_BE);
-
-      let data = new Uint8Array(INDEXED_KEY_SIZE);
-
-      if (isHardened) {
-        // Hardened child
+    //@ts-ignore
+    hdkey._deriveChild = async function (index, hardened) {
+      let seed = new Uint8Array(INDEXED_KEY_SIZE);
+      if (hardened) {
         if (!_privateKey) {
           throw new Error("Could not derive hardened child key");
         }
-
-        // data = 0x00 || ser256(kpar) || ser32(index)
-        data.set([0], 0); // 1
-        data.set(_privateKey, 1); // 32
-        data.set(_indexBuffer, KEY_SIZE);
+        index += HARDENED_OFFSET;
+        seed.set([0], 0);
+        seed.set(_privateKey, 1);
       } else {
-        // Normal child
-        // data = serP(point(kpar)) || ser32(index)
-        //      = serP(Kpar) || ser32(index)
-        data.set(hdkey.publicKey, 0);
-        data.set(_indexBuffer, KEY_SIZE);
+        seed.set(hdkey.publicKey, 0);
       }
+      _indexDv.setUint32(0, index, BUFFER_BE);
+      seed.set(_indexBuffer, KEY_SIZE);
 
-      let IBuf = await Utils.sha512hmac(hdkey.chainCode, data);
-      let I = new Uint8Array(IBuf);
+      let I = await Utils.sha512hmac(hdkey.chainCode, seed);
       let IL = I.slice(0, 32);
       let IR = I.slice(32);
 
-      let hd = DashHd.create(hdkey.versions);
+      let _hdkey = DashHd.create(hdkey.versions);
+      _hdkey.depth = hdkey.depth + 1;
+      _hdkey.parentFingerprint = hdkey.getFingerprint();
+      _hdkey.index = index;
+      _hdkey.chainCode = IR;
 
-      // Private parent key -> private child key
       if (_privateKey) {
-        // ki = parse256(IL) + kpar (mod n)
-        try {
-          let privateKeyCopy = new Uint8Array(_privateKey);
-          await hd.setPrivateKey(
-            await Utils.privateKeyTweakAdd(privateKeyCopy, IL),
-          );
-          // throw if IL >= n || (privateKey + IL) === 0
-        } catch (err) {
-          // In case parse256(IL) >= n or ki == 0, one should proceed with the next value for i
-          return await hdkey.deriveChild(index + 1);
-        }
-        // Public parent key -> public child key
+        let nextPrivKey = await Utils.privateKeyTweakAdd(_privateKey, IL);
+        await _hdkey.setPrivateKey(nextPrivKey);
       } else {
-        // Ki = point(parse256(IL)) + Kpar
-        //    = G*IL + Kpar
-        try {
-          let publicKeyCopy = new Uint8Array(hdkey.publicKey);
-          await hd.setPublicKey(
-            await Utils.publicKeyTweakAdd(publicKeyCopy, IL),
-          );
-          // throw if IL >= n || (g**IL + publicKey) is infinity
-        } catch (err) {
-          // In case parse256(IL) >= n or Ki is the point at infinity, one should proceed with the next value for i
-          return await hdkey.deriveChild(index + 1);
-        }
+        let nextPubKey = await Utils.publicKeyTweakAdd(hdkey.publicKey, IL);
+        await _hdkey.setPublicKey(nextPubKey);
       }
 
-      hd.chainCode = IR;
-      hd.depth = hdkey.depth + 1;
-      hd.parentFingerprint = hdkey.getFingerprint();
-      hd.index = index;
-
-      return hd;
+      return _hdkey;
     };
 
     hdkey.wipePrivateData = function () {
@@ -420,8 +409,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   DashHd.fromMasterSeed = async function (seedBuffer, versions) {
-    let IBuf = await Utils.sha512hmac(MASTER_SECRET, seedBuffer);
-    let I = new Uint8Array(IBuf);
+    let I = await Utils.sha512hmac(MASTER_SECRET, seedBuffer);
     let IL = I.subarray(0, 32);
     let IR = I.subarray(32);
 
@@ -549,6 +537,7 @@ if ("object" === typeof module) {
 /**
  * @callback HDDeriveChild
  * @param {Number} index - includes HARDENED_OFFSET, if applicable
+ * @param {Boolean} hardened
  * returns {Promise<HDKey>}
  */
 
