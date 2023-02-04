@@ -1,6 +1,7 @@
 /**
  * @typedef DashHD
  * @prop {HDCreate} create
+ * @prop {HDFingerprint} fingerprint
  * @prop {HDFromSeed} fromMasterSeed
  * @prop {HDFromXKey} fromExtendedKey
  * @prop {HDUtils} utils
@@ -28,7 +29,6 @@
  * @typedef HDKey
  * @prop {Uint8Array} chainCode - extra 32-bytes of shared entropy for xkeys
  * @prop {Number} depth - of hd path - typically 0 is seed, 1-3 hardened, 4-5 are not
- * @prop {Uint8Array} identifier - same bytes as pubKeyHash, but used for id
  * @prop {Number} index - the final segment of an HD Path, the index of the wif/addr
  * @prop {Number} parentFingerprint - 32-bit int, slice of id, stored in child xkeys
  * @prop {Uint8Array} publicKey
@@ -36,7 +36,6 @@
  * @prop {HDDerivePath} derive - derive a full hd path from the given root
  * @prop {HDDeriveChild} deriveChild - get the next child xkey (in a path segment)
  * @prop {HDDeriveChild} _deriveChild - helper
- * @prop {HDFingerprint} getFingerprint
  * @prop {HDMaybeGetString} getPrivateExtendedKey
  * @prop {HDMaybeGetBuffer} getPrivateKey
  * @prop {HDGetString} getPublicExtendedKey
@@ -230,29 +229,8 @@ var DashHd = ("object" === typeof module && exports) || {};
     hdkey.depth = 0;
     hdkey.index = 0;
     //hdkey.publicKey = null;
-    //hdkey.identifier = null;
     //hdkey.chainCode = null;
     hdkey.parentFingerprint = 0;
-
-    hdkey.getFingerprint = function () {
-      if (!hdkey.identifier) {
-        throw new Error("Public key has not been set");
-      }
-      let i32be = readUInt32BE(hdkey.identifier, 0);
-      return i32be;
-    };
-
-    /**
-     * @param {Uint8Array} u8 - a "web" JS buffer
-     * @param {Number} offset - where to start reading
-     * @returns {Number} - a 0-shifted (uint) JS Number
-     */
-    function readUInt32BE(u8, offset) {
-      let dv = new DataView(u8.buffer);
-      // will read offset + 4 bytes (32-bit uint)
-      let n = dv.getUint32(offset, BUFFER_BE);
-      return n;
-    }
 
     hdkey.getPrivateKey = function () {
       return _privateKey;
@@ -262,7 +240,6 @@ var DashHd = ("object" === typeof module && exports) || {};
 
       _privateKey = value;
       hdkey.publicKey = await Utils.toPublicKey(value);
-      hdkey.identifier = await hash160(hdkey.publicKey);
     };
 
     hdkey.setPublicKey = async function (value) {
@@ -279,7 +256,6 @@ var DashHd = ("object" === typeof module && exports) || {};
      */
     hdkey._setPublicKey = async function (publicKey) {
       hdkey.publicKey = publicKey;
-      hdkey.identifier = await hash160(publicKey);
       _privateKey = null;
     };
 
@@ -382,7 +358,7 @@ var DashHd = ("object" === typeof module && exports) || {};
 
       let _hdkey = DashHd.create(hdkey.versions);
       _hdkey.depth = hdkey.depth + 1;
-      _hdkey.parentFingerprint = hdkey.getFingerprint();
+      _hdkey.parentFingerprint = await DashHd.fingerprint(hdkey.publicKey);
       _hdkey.index = index;
       _hdkey.chainCode = IR;
 
@@ -407,6 +383,36 @@ var DashHd = ("object" === typeof module && exports) || {};
 
     return hdkey;
   };
+
+  /** @type {HDFingerprint} */
+  DashHd.fingerprint = async function (pubBytes) {
+    if (!pubBytes) {
+      throw new Error("Public key has not been set");
+    }
+
+    /*
+     * Note: this *happens* to use the same algorithm
+     * as many toPkh() implementations but, semantically,
+     * this is NOT toPkh() - it has a different purpose.
+     * Furthermore, fingerprint() may change independently of toPkh().
+     */
+    let sha = await Utils.sha256sum(pubBytes);
+    let identifier = await Utils.ripemd160sum(sha);
+    let i32be = readUInt32BE(identifier, 0);
+    return i32be;
+  };
+
+  /**
+   * @param {Uint8Array} u8 - a "web" JS buffer
+   * @param {Number} offset - where to start reading
+   * @returns {Number} - a 0-shifted (uint) JS Number
+   */
+  function readUInt32BE(u8, offset) {
+    let dv = new DataView(u8.buffer);
+    // will read offset + 4 bytes (32-bit uint)
+    let n = dv.getUint32(offset, BUFFER_BE);
+    return n;
+  }
 
   DashHd.fromMasterSeed = async function (seedBuffer, versions) {
     let I = await Utils.sha512hmac(MASTER_SECRET, seedBuffer);
@@ -509,15 +515,6 @@ var DashHd = ("object" === typeof module && exports) || {};
     return xkey;
   }
 
-  /**
-   * @param {Uint8Array} buf
-   * @returns {Promise<Uint8Array>}
-   */
-  async function hash160(buf) {
-    let sha = await Utils.sha256sum(buf);
-    return await Utils.ripemd160sum(sha);
-  }
-
   DashHd.HARDENED_OFFSET = HARDENED_OFFSET;
 })(("object" === typeof window && window) || {}, DashHd);
 if ("object" === typeof module) {
@@ -549,6 +546,7 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDFingerprint
+ * @param {Uint8Array} pubBytes - Public Key
  * @returns {Number}
  */
 

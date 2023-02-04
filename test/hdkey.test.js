@@ -114,9 +114,10 @@ describe("hdkey", function () {
           u8ToHex(hdkey.publicKey),
           "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
         );
+        let print = await DashHd.fingerprint(hdkey.publicKey);
         assert.equal(
-          u8ToHex(hdkey.identifier),
-          "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220",
+          print.toString(16),
+          "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
         );
       });
     });
@@ -141,9 +142,10 @@ describe("hdkey", function () {
           u8ToHex(hdkey.publicKey),
           "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
         );
+        let print = await DashHd.fingerprint(hdkey.publicKey);
         assert.equal(
-          u8ToHex(hdkey.identifier),
-          "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220",
+          print.toString(16),
+          "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
         );
       });
 
@@ -166,9 +168,10 @@ describe("hdkey", function () {
           u8ToHex(hdkey.publicKey),
           "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
         );
+        let print = await DashHd.fingerprint(hdkey.publicKey);
         assert.equal(
-          u8ToHex(hdkey.identifier),
-          "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220",
+          print.toString(16),
+          "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
         );
       });
     });
@@ -334,9 +337,10 @@ describe("hdkey", function () {
         u8ToHex(hdkey.publicKey),
         "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
       );
+      let print = await DashHd.fingerprint(hdkey.publicKey);
       assert.equal(
-        u8ToHex(hdkey.identifier),
-        "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220",
+        print.toString(16),
+        "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
       );
     });
 
