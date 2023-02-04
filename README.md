@@ -3,12 +3,15 @@
 Manage HD Keys from HD Wallet Seed and Extended (xprv, xpub) Key Paths. \
 (compatible with the [Hierarchical Deterministic Keys (BIP-32)][bip-32] spec)
 
-A fully-functional, production-ready reference implementation of Dash HD -
-suitable for learning DASH specs and protocols, and porting to other languages.
+> A fully-functional, production-ready reference implementation of Dash HD -
+> suitable for learning DASH specs and protocols, and porting to other
+> languages.
 
-```txt
+```text
 HD Wallet Seed         : ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
+```
 
+```text
 HD Key Path            :  m/44'/5'/0'/0/0
 WIF                    :  XCGKuZcKDjNhx8DaNKK4xwMMNzspaoToT6CafJAbBfQTi57buhLK
 Address                :  XrZJJfEKRNobcuwWKTD3bDu8ou7XSWPbc9
