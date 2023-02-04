@@ -1,5 +1,5 @@
 /**
- * @typedef HDKey
+ * @typedef DashHD
  * @prop {HDCreate} create
  * @prop {HDFromSeed} fromMasterSeed
  * @prop {HDFromXKey} fromExtendedKey
@@ -45,10 +45,10 @@
  * @prop {Function} _setPublicKey
  */
 
-/** @type {HDKey} */
+/** @type {DashHD} */
 //@ts-ignore
-var HDKey = ("object" === typeof module && exports) || {};
-(function (window, HDKey) {
+var DashHd = ("object" === typeof module && exports) || {};
+(function (window, DashHd) {
   "use strict";
 
   //const BUFFER_LE = true;
@@ -219,7 +219,7 @@ var HDKey = ("object" === typeof module && exports) || {};
   // Bitcoin hardcoded by default, can use package `coininfo` for others
   let BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
 
-  HDKey.create = function (versions) {
+  DashHd.create = function (versions) {
     /** @type {hdkey} */
     let hdkey = {};
     /** @type {Uint8Array?} */
@@ -369,7 +369,7 @@ var HDKey = ("object" === typeof module && exports) || {};
       let IL = I.slice(0, 32);
       let IR = I.slice(32);
 
-      let hd = HDKey.create(hdkey.versions);
+      let hd = DashHd.create(hdkey.versions);
 
       // Private parent key -> private child key
       if (_privateKey) {
@@ -419,20 +419,20 @@ var HDKey = ("object" === typeof module && exports) || {};
     return hdkey;
   };
 
-  HDKey.fromMasterSeed = async function (seedBuffer, versions) {
+  DashHd.fromMasterSeed = async function (seedBuffer, versions) {
     let IBuf = await Utils.sha512hmac(MASTER_SECRET, seedBuffer);
     let I = new Uint8Array(IBuf);
     let IL = I.subarray(0, 32);
     let IR = I.subarray(32);
 
-    let hdkey = HDKey.create(versions);
+    let hdkey = DashHd.create(versions);
     hdkey.chainCode = IR;
     await hdkey.setPrivateKey(IL);
 
     return hdkey;
   };
 
-  HDKey.fromExtendedKey = async function (
+  DashHd.fromExtendedKey = async function (
     base58key,
     versions,
     skipVerification,
@@ -440,7 +440,7 @@ var HDKey = ("object" === typeof module && exports) || {};
     // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
     versions = versions || BITCOIN_VERSIONS;
     skipVerification = skipVerification || false;
-    let hdkey = HDKey.create(versions);
+    let hdkey = DashHd.create(versions);
 
     //@ts-ignore - wth?
     let keyInfo = await Utils.decode(base58key);
@@ -530,10 +530,10 @@ var HDKey = ("object" === typeof module && exports) || {};
     return await Utils.ripemd160sum(sha);
   }
 
-  HDKey.HARDENED_OFFSET = HARDENED_OFFSET;
-})(("object" === typeof window && window) || {}, HDKey);
+  DashHd.HARDENED_OFFSET = HARDENED_OFFSET;
+})(("object" === typeof window && window) || {}, DashHd);
 if ("object" === typeof module) {
-  module.exports = HDKey;
+  module.exports = DashHd;
 }
 
 // Type Definitions

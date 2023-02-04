@@ -1,29 +1,35 @@
 {
-  "name": "hdkey",
+  "name": "dashhd",
   "version": "2.1.0",
-  "description": "Bitcoin BIP32 hierarchical deterministic keys",
-  "main": "lib/hdkey.js",
+  "description": "Manage HD Keys from HD Wallet Seed and Extended (xprv, xpub) Key Paths. Part of $DASH Tools.",
+  "main": "dashhd.js",
   "browser": {
     "crypto": false
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/cryptocoinjs/hdkey"
+    "url": "git://github.com/dashive/dashhd.js"
   },
   "license": "SEE LICENSE IN LICENSE",
   "keywords": [
-    "bitcoin",
-    "bip32",
-    "bip",
+    "DASH",
+    "hd",
+    "wallet",
     "key",
+    "keys",
+    "path",
+    "bip32",
+    "bip44",
     "hierarchical",
     "deterministic",
-    "crypto"
+    "crypto",
+    "$DASH",
+    "Tools"
   ],
   "bugs": {
-    "url": "https://github.com/cryptocoinjs/hdkey/issues"
+    "url": "https://github.com/dashive/dashhd.js/issues"
   },
-  "homepage": "https://github.com/cryptocoinjs/hdkey",
+  "homepage": "https://github.com/dashive/dashhd.js",
   "files": [],
   "devDependencies": {
     "@dashincubator/secp256k1": "^1.7.1-4",
