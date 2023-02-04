@@ -8,17 +8,17 @@ Manage HD Keys from HD Wallet Seed and Extended (xprv, xpub) Key Paths. \
 > languages.
 
 ```text
-HD Wallet Seed         : ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
+HD Wallet Seed:  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
 ```
 
 ```text
-HD Key Path            :  m/44'/5'/0'/0/0
-WIF                    :  XCGKuZcKDjNhx8DaNKK4xwMMNzspaoToT6CafJAbBfQTi57buhLK
-Address                :  XrZJJfEKRNobcuwWKTD3bDu8ou7XSWPbc9
+HD Key Path:  m/44'/5'/0'/0/0
+        WIF:  XCGKuZcKDjNhx8DaNKK4xwMMNzspaoToT6CafJAbBfQTi57buhLK
+    Address:  XrZJJfEKRNobcuwWKTD3bDu8ou7XSWPbc9
 
-HD Key Path            :  m/44'/5'/1'/1/1
-WIF                    :  XF9murLtNpJaZXbwMxqJ6BhigEtu9NxfBCJDBokCJcqFkYkz3itz
-Address                :  XueHW2ELMxoXzXcaHMxmwVWhcADE1W5s8c
+HD Key Path:  m/44'/5'/1'/1/1
+        WIF:  XF9murLtNpJaZXbwMxqJ6BhigEtu9NxfBCJDBokCJcqFkYkz3itz
+    Address:  XueHW2ELMxoXzXcaHMxmwVWhcADE1W5s8c
 ```
 
 (that's the canonical _Zeed_ seed, generated from the canonical _Zoomonic_)
