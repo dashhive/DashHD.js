@@ -212,7 +212,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   let HARDENED_OFFSET = 0x80000000;
   let KEY_SIZE = 33;
   let INDEXED_KEY_SIZE = 4 + KEY_SIZE;
-  let XKEY_SIZE = 78;
+  let XKEY_SIZE = 74;
 
   // Bitcoin hardcoded by default, can use package `coininfo` for others
   let BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
@@ -247,9 +247,7 @@ var DashHd = ("object" === typeof module && exports) || {};
       key.set([0], 0);
       key.set(_privateKey, 1);
       //@ts-ignore - wth?
-      return await Utils.encodeXPrv(
-        serialize(hdkey, 0 /*hdkey.versions.private*/, key),
-      );
+      return await Utils.encodeXPrv(serialize(hdkey, key));
     };
 
     hdkey.getPublicExtendedKey = async function () {
@@ -257,9 +255,7 @@ var DashHd = ("object" === typeof module && exports) || {};
         throw new Error("Missing public key");
       }
 
-      return await Utils.encodeXPub(
-        serialize(hdkey, 0 /*hdkey.versions.public*/, hdkey.publicKey),
-      );
+      return await Utils.encodeXPub(serialize(hdkey, hdkey.publicKey));
     };
 
     hdkey.derive = async function (path) {
@@ -475,27 +471,21 @@ var DashHd = ("object" === typeof module && exports) || {};
 
   /**
    * @param {HDKey} hdkey - TODO attach to hdkey
-   * @param {Number} version
    * @param {Uint8Array} key
    */
-  function serialize(hdkey, version, key) {
+  function serialize(hdkey, key) {
     // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
-    let myOffset = -4;
-    let xkey = new Uint8Array(XKEY_SIZE + myOffset);
+    let xkey = new Uint8Array(XKEY_SIZE);
     let xkeyDv = new DataView(xkey.buffer);
 
-    if (version) {
-      myOffset += 4;
-      xkeyDv.setUint32(myOffset, version, BUFFER_BE);
-    }
-    xkeyDv.setUint8(myOffset + 4, hdkey.depth);
+    xkeyDv.setUint8(0, hdkey.depth);
 
     let fingerprint = (hdkey.depth && hdkey.parentFingerprint) || 0x00000000;
-    xkeyDv.setUint32(myOffset + 5, fingerprint, BUFFER_BE);
-    xkeyDv.setUint32(myOffset + 9, hdkey.index, BUFFER_BE);
+    xkeyDv.setUint32(1, fingerprint, BUFFER_BE);
+    xkeyDv.setUint32(5, hdkey.index, BUFFER_BE);
 
-    xkey.set(hdkey.chainCode, myOffset + 13);
-    xkey.set(key, myOffset + 45);
+    xkey.set(hdkey.chainCode, 9);
+    xkey.set(key, 41);
 
     return xkey;
   }
