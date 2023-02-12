@@ -207,9 +207,11 @@ var DashHd = ("object" === typeof module && exports) || {};
     0x42, 0x69, 0x74, 0x63, 0x6f, 0x69, 0x6e, 0x20, 0x73, 0x65, 0x65, 0x64,
   ]);
   let HARDENED_OFFSET = 0x80000000;
-  let KEY_SIZE = 33;
+  // 1 Y-Recovery Byte (or null) + 32 Private Bytes or Public X Bytes
+  let KEY_SIZE = 1 + 32;
   let INDEXED_KEY_SIZE = 4 + KEY_SIZE;
-  let XKEY_SIZE = 78;
+  // Raw XKey Size (no version or checksum)
+  let XKEY_SIZE = 74;
 
   // Bitcoin hardcoded by default, can use package `coininfo` for others
   let BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
@@ -276,7 +278,7 @@ var DashHd = ("object" === typeof module && exports) || {};
       for (;;) {
         try {
           //@ts-ignore
-          return await hdkey._deriveChild(index);
+          return await hdkey._deriveChild(index, harden);
         } catch (e) {
           // In essence:
           // if it couldn't produce a public key, just go on the next one
@@ -313,11 +315,9 @@ var DashHd = ("object" === typeof module && exports) || {};
           throw new Error("Could not derive hardened child key");
         }
         index += HARDENED_OFFSET;
-        // 1 recover byte (null) + 32 Priv bytes
         data.set([0], 0);
         data.set(_privateKey, 1);
       } else {
-        // 1 recover byte + 32 Pub X bytes
         data.set(hdkey.publicKey, 0);
       }
       data.set(_indexBuffer, KEY_SIZE);
@@ -505,7 +505,7 @@ var DashHd = ("object" === typeof module && exports) || {};
    */
   function serialize(hdkey, key) {
     // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
-    let xkey = new Uint8Array(XKEY_SIZE - 4);
+    let xkey = new Uint8Array(XKEY_SIZE);
     let xkeyDv = new DataView(xkey.buffer);
 
     xkeyDv.setUint8(0, hdkey.depth);
