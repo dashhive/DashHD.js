@@ -62,7 +62,7 @@ console.log(hdkey.privateExtendedKey);
 
 // => 'xprv9s21ZrQH143K2SKJK9EYRW3Vsg8tWVHRS54hAJasj1eGsQXeWDHLeuu5hpLHRbeKedDJM4Wj9wHHMmuhPF8dQ3bzyup6R7qmMQ1i1FtzNEW'
 
-var xpub = await hdkey.getPublicExtendedKey();
+var xpub = await DashHd.getPublicExtendedKey(hdkey);
 console.log(xpub);
 // => 'xpub661MyMwAqRbcEvPmRAmYndzERhyNux1GoHzHxgzVHMBFkCro3kbbCiDZZ5XabZDyXPj5mH3hktvkjhhUdCQxie5e1g4t2GuAWNbPmsSfDp2'
 ```
@@ -101,7 +101,7 @@ var hdkey = DashHd.fromExtendedKey(key);
 
 ---
 
-### `await hdkey.derive(path)`
+### `await DashHd.derive(hdkey, path)`
 
 Derives the `hdkey` at `path` from the current `hdkey`.
 
@@ -111,11 +111,11 @@ var seed =
 var hdkey = await DashHd.fromMasterSeed(Buffer.from(seed, "hex"));
 var childkey = await hdkey.derive("m/0/2147483647'/1");
 
-var xprv = await childkey.getPrivateExtendedKey();
+var xprv = await DashHd.getPrivateExtendedKey(childkey);
 console.log(xprv);
 // -> "xprv9zFnWC6h2cLgpmSA46vutJzBcfJ8yaJGg8cX1e5StJh45BBciYTRXSd25UEPVuesF9yog62tGAQtHjXajPPdbRCHuWS6T8XA2ECKADdw4Ef"
 
-var xpub = await childkey.getPublicExtendedKey();
+var xpub = await DashHd.getPublicExtendedKey(childkey);
 console.log(xpub);
 // -> "xpub6DF8uhdarytz3FWdA8TvFSvvAh8dP3283MY7p2V4SeE2wyWmG5mg5EwVvmdMVCQcoNJxGoWaU9DCWh89LojfZ537wTfunKau47EL2dhHKon"
 ```
@@ -127,13 +127,13 @@ Newer, "hardened" derivation paths look like this:
 var childkey = await hdkey.derive("m/44'/0'/0'/0/0");
 ```
 
-### `hdkey.wipePrivateData()`
+### `DashHd.wipePrivateData(hdkey)`
 
 Wipes all record of the private key from the `hdkey` instance. After calling
 this method, the instance will behave as if it was created via
 `DashHd.fromExtendedKey(xpub)`.
 
-### `hdkey.getPrivateKey()`
+### `hdkey.privateKey`
 
 Get the `hdkey`'s private key, stored as a buffer.
 
@@ -141,11 +141,11 @@ Get the `hdkey`'s private key, stored as a buffer.
 
 Get the `hdkey`'s public key, stored as a buffer.
 
-### `await hdkey.getPrivateExtendedKey()`
+### `await DashHd.getPrivateExtendedKey(hdkey)`
 
 Get the `hdkey`'s `xprv`, stored as a string.
 
-### `await hdkey.getPublicExtendedKey()`
+### `await DashHd.getPublicExtendedKey(hdkey)`
 
 Get the `hdkey`'s `xpub`, stored as a string.
 

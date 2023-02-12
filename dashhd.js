@@ -1,11 +1,17 @@
 /**
  * @typedef DashHD
  * @prop {HDCreate} create
+ * @prop {HDDeriveChild} deriveChild - get the next child xkey (in a path segment)
+ * @prop {HDDerivePath} derivePath - derive a full hd path from the given key
  * @prop {HDFingerprint} fingerprint
  * @prop {HDFromSeed} fromMasterSeed
  * @prop {HDFromXKey} fromExtendedKey
+ * @prop {HDGetXPrv} getPrivateExtendedKey
+ * @prop {HDGetXPub} getPublicExtendedKey
  * @prop {HDUtils} utils
+ * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
  * @prop {Number} HARDENED_OFFSET - 0x80000000
+ * @prop {HDDeriveHelper} _derive - helper
  */
 
 /**
@@ -21,7 +27,7 @@
 
 /**
  * @callback HDCreate
- * @param {HDVersions} [versions]
+ * @param {hdkey} opts
  * @returns {HDKey}
  */
 
@@ -33,14 +39,7 @@
  * @prop {Number} parentFingerprint - 32-bit int, slice of id, stored in child xkeys
  * @prop {Uint8Array} publicKey
  * @prop {HDVersions} versions - magic bytes for base58 prefix
- * @prop {HDDerivePath} derive - derive a full hd path from the given root
- * @prop {HDDeriveChild} deriveChild - get the next child xkey (in a path segment)
- * @prop {HDDeriveChild} _deriveChild - helper
- * @prop {HDMaybeGetString} getPrivateExtendedKey
- * @prop {HDMaybeGetBuffer} getPrivateKey
- * @prop {HDGetString} getPublicExtendedKey
- * @prop {HDSetBuffer} setPrivateKey
- * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
+ * @prop {Uint8Array|undefined?} [privateKey]
  */
 
 /** @type {DashHD} */
@@ -205,7 +204,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   // "Bitcoin seed"
-  let MASTER_SECRET = Uint8Array.from([
+  let ROOT_CHAIN = Uint8Array.from([
     // B     i     t     c     o     i     n   " "     s     e     e     d
     0x42, 0x69, 0x74, 0x63, 0x6f, 0x69, 0x6e, 0x20, 0x73, 0x65, 0x65, 0x64,
   ]);
@@ -217,146 +216,158 @@ var DashHd = ("object" === typeof module && exports) || {};
   // Bitcoin hardcoded by default, can use package `coininfo` for others
   let BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
 
-  DashHd.create = function (versions) {
+  DashHd.create = function ({
+    versions = BITCOIN_VERSIONS,
+    depth = 0,
+    parentFingerprint = 0,
+    index,
+    chainCode,
+    privateKey,
+    publicKey,
+  }) {
     /** @type {HDKey} */
     let hdkey = {};
-    /** @type {Uint8Array?} */
-    let _privateKey = null;
 
-    hdkey.versions = versions || BITCOIN_VERSIONS;
-    hdkey.depth = 0;
-    hdkey.index = 0;
-    //hdkey.publicKey = null;
-    //hdkey.chainCode = null;
-    hdkey.parentFingerprint = 0;
-
-    hdkey.getPrivateKey = function () {
-      return _privateKey;
-    };
-    hdkey.setPrivateKey = function (privBytes) {
-      _privateKey = privBytes;
-      return null;
-    };
-
-    hdkey.getPrivateExtendedKey = async function () {
-      if (!_privateKey) {
-        return null;
-      }
-
-      let key = new Uint8Array(KEY_SIZE);
-      key.set([0], 0);
-      key.set(_privateKey, 1);
-      //@ts-ignore - wth?
-      return await Utils.encodeXPrv(serialize(hdkey, key));
-    };
-
-    hdkey.getPublicExtendedKey = async function () {
-      if (!hdkey.publicKey) {
-        throw new Error("Missing public key");
-      }
-
-      return await Utils.encodeXPub(serialize(hdkey, hdkey.publicKey));
-    };
-
-    hdkey.derive = async function (path) {
-      if (path === "m" || path === "M" || path === "m'" || path === "M'") {
-        return hdkey;
-      }
-
-      let entries = path.split("/");
-      let _hdkey = hdkey;
-      for (let i = 0; i < entries.length; i += 1) {
-        let c = entries[i];
-        if (i === 0) {
-          assert(/^[mM]{1}/.test(c), 'Path must start with "m" or "M"');
-          continue;
-        }
-
-        let hardened = c.length > 1 && c[c.length - 1] === "'";
-        let childIndex = parseInt(c, 10); // & (HARDENED_OFFSET - 1)
-        assert(childIndex < HARDENED_OFFSET, "Invalid index");
-
-        _hdkey = await _hdkey.deriveChild(childIndex, hardened);
-      }
-
-      return _hdkey;
-    };
-
-    hdkey.deriveChild = async function (index, hardened) {
-      for (;;) {
-        try {
-          //@ts-ignore
-          return await hdkey._deriveChild(index, hardened);
-        } catch (e) {
-          // In essence:
-          // if it couldn't produce a public key, just go on the next one
-          //
-          // More precisely:
-          //
-          // throw if IL >= n || (privateKey + IL) === 0
-          // In case parse256(IL) >= n or ki == 0,
-          // one should proceed with the next value for i
-
-          // throw if IL >= n || (g**IL + publicKey) is infinity
-          // In case parse256(IL) >= n or Ki is the point at infinity,
-          // one should proceed with the next value for i
-          index += 1;
-        }
-      }
-    };
-
-    // IMPORTANT: never allow `await` (or other async) between writing to
-    // and accessing these! (otherwise the data will be corrupted)
-    // (stored here for performance - no allocations or garbage collection)
-    let _indexBuffer = new Uint8Array(4);
-    let _indexDv = new DataView(_indexBuffer.buffer);
-
-    //@ts-ignore
-    hdkey._deriveChild = async function (index, hardened) {
-      let seed = new Uint8Array(INDEXED_KEY_SIZE);
-      if (hardened) {
-        if (!_privateKey) {
-          throw new Error("Could not derive hardened child key");
-        }
-        index += HARDENED_OFFSET;
-        seed.set([0], 0);
-        seed.set(_privateKey, 1);
-      } else {
-        seed.set(hdkey.publicKey, 0);
-      }
-      _indexDv.setUint32(0, index, BUFFER_BE);
-      seed.set(_indexBuffer, KEY_SIZE);
-
-      let I = await Utils.sha512hmac(hdkey.chainCode, seed);
-      let IL = I.slice(0, 32);
-      let IR = I.slice(32);
-
-      let _hdkey = DashHd.create(hdkey.versions);
-      _hdkey.depth = hdkey.depth + 1;
-      _hdkey.parentFingerprint = await DashHd.fingerprint(hdkey.publicKey);
-      _hdkey.index = index;
-      _hdkey.chainCode = IR;
-
-      if (_privateKey) {
-        let nextPrivKey = await Utils.privateKeyTweakAdd(_privateKey, IL);
-        _hdkey.setPrivateKey(nextPrivKey);
-        _hdkey.publicKey = await Utils.toPublicKey(nextPrivKey);
-      } else {
-        _hdkey.publicKey = await Utils.publicKeyTweakAdd(hdkey.publicKey, IL);
-      }
-
-      return _hdkey;
-    };
-
-    hdkey.wipePrivateData = function () {
-      if (_privateKey) {
-        Utils.secureErase(_privateKey);
-      }
-      _privateKey = null;
-      return hdkey;
-    };
+    hdkey.versions = versions;
+    hdkey.depth = depth;
+    hdkey.parentFingerprint = parentFingerprint;
+    hdkey.index = index;
+    hdkey.chainCode = chainCode;
+    hdkey.privateKey = privateKey;
+    hdkey.publicKey = publicKey;
 
     return hdkey;
+  };
+
+  DashHd.getPrivateExtendedKey = async function (hdkey) {
+    if (!hdkey.privateKey) {
+      return null;
+    }
+
+    let key = new Uint8Array(KEY_SIZE);
+    key.set([0], 0);
+    key.set(hdkey.privateKey, 1);
+    //@ts-ignore - wth?
+    return await Utils.encodeXPrv(serialize(hdkey, key));
+  };
+
+  DashHd.getPublicExtendedKey = async function (hdkey) {
+    if (!hdkey.publicKey) {
+      throw new Error("Missing public key");
+    }
+
+    return await Utils.encodeXPub(serialize(hdkey, hdkey.publicKey));
+  };
+
+  // IMPORTANT: never allow `await` (or other async) between writing to
+  // and accessing these! (otherwise the data will be corrupted)
+  // (stored here for performance - no allocations or garbage collection)
+  let _indexBuffer = new Uint8Array(4);
+  let _indexDv = new DataView(_indexBuffer.buffer);
+
+  DashHd.deriveChild = async function (hdkey, index, hardened) {
+    let seed = new Uint8Array(INDEXED_KEY_SIZE);
+    if (hardened) {
+      if (!hdkey.privateKey) {
+        throw new Error("Could not derive hardened child key");
+      }
+      index += HARDENED_OFFSET;
+      seed.set([0], 0);
+      seed.set(hdkey.privateKey, 1);
+    } else {
+      seed.set(hdkey.publicKey, 0);
+    }
+    _indexDv.setUint32(0, index, BUFFER_BE);
+    seed.set(_indexBuffer, KEY_SIZE);
+
+    let chainAndKeys;
+    try {
+      //@ts-ignore
+      chainAndKeys = await DashHd._derive(seed, hdkey);
+    } catch (e) {
+      // In essence:
+      // if it couldn't produce a public key, just go on the next one
+      //
+      // More precisely:
+      //
+      // throw if IL >= n || (privateKey + IL) === 0
+      // In case parse256(IL) >= n or ki == 0,
+      // one should proceed with the next value for i
+
+      // throw if IL >= n || (g**IL + publicKey) is infinity
+      // In case parse256(IL) >= n or Ki is the point at infinity,
+      // one should proceed with the next value for i
+      //index += 1; // or not
+      throw e;
+    }
+
+    let versions = hdkey.versions;
+    let depth = hdkey.depth + 1;
+    let parentFingerprint = await DashHd.fingerprint(hdkey.publicKey);
+    return Object.assign(
+      {
+        versions,
+        depth,
+        parentFingerprint,
+        index,
+      },
+      chainAndKeys,
+    );
+  };
+
+  //@ts-ignore
+  DashHd._derive = async function (seed, chainParts) {
+    //let I = await Utils.sha512hmac(ROOT_CHAIN, seedBuffer);
+    //let IL = I.subarray(0, 32);
+    //let IR = I.subarray(32);
+    //let publicKey = await Utils.toPublicKey(IL);
+
+    let I = await Utils.sha512hmac(chainParts.chainCode, seed);
+    let IL = I.slice(0, 32);
+    let IR = I.slice(32);
+
+    let nextPrivKey;
+    let nextPubkey;
+    if (chainParts.privateKey) {
+      nextPrivKey = await Utils.privateKeyTweakAdd(chainParts.privateKey, IL);
+      nextPubkey = await Utils.toPublicKey(nextPrivKey);
+    } else if (chainParts.publicKey) {
+      nextPubkey = await Utils.publicKeyTweakAdd(chainParts.publicKey, IL);
+    } else {
+      // TODO
+      nextPrivKey = IL;
+      nextPubkey = await Utils.toPublicKey(IL);
+    }
+
+    return {
+      chainCode: IR,
+      privateKey: nextPrivKey,
+      publicKey: nextPubkey,
+    };
+  };
+
+  DashHd.derivePath = async function (parent, path) {
+    if (path === "m" || path === "M" || path === "m'" || path === "M'") {
+      return parent;
+    }
+
+    let entries = path.split("/");
+    let child = parent;
+    for (let i = 0; i < entries.length; i += 1) {
+      let c = entries[i];
+      if (i === 0) {
+        assert(/^[mM]{1}/.test(c), 'Path must start with "m" or "M"');
+        continue;
+      }
+
+      let hardened = c.length > 1 && c[c.length - 1] === "'";
+      let childIndex = parseInt(c, 10); // & (HARDENED_OFFSET - 1)
+      assert(childIndex < HARDENED_OFFSET, "Invalid index");
+
+      child = await DashHd.deriveChild(child, childIndex, hardened);
+    }
+
+    return child;
   };
 
   /** @type {HDFingerprint} */
@@ -389,17 +400,20 @@ var DashHd = ("object" === typeof module && exports) || {};
     return n;
   }
 
-  DashHd.fromMasterSeed = async function (seedBuffer, versions) {
-    let I = await Utils.sha512hmac(MASTER_SECRET, seedBuffer);
-    let IL = I.subarray(0, 32);
-    let IR = I.subarray(32);
+  DashHd.fromMasterSeed = async function (seed, versions = BITCOIN_VERSIONS) {
+    let chainAndKeys = await DashHd._derive(seed, {
+      chainCode: ROOT_CHAIN,
+    });
 
-    let hdkey = DashHd.create(versions);
-    hdkey.chainCode = IR;
-    await hdkey.setPrivateKey(IL);
-    hdkey.publicKey = await Utils.toPublicKey(IL);
-
-    return hdkey;
+    return Object.assign(
+      {
+        versions: versions,
+        depth: 0,
+        parentFingerprint: 0,
+        index: 0,
+      },
+      chainAndKeys,
+    );
   };
 
   DashHd.fromExtendedKey = async function (
@@ -410,7 +424,6 @@ var DashHd = ("object" === typeof module && exports) || {};
     // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
     versions = versions || BITCOIN_VERSIONS;
     skipVerification = skipVerification || false;
-    let hdkey = DashHd.create(versions);
 
     //@ts-ignore - wth?
     let keyInfo = await Utils.decode(base58key);
@@ -425,22 +438,17 @@ var DashHd = ("object" === typeof module && exports) || {};
       "Version mismatch: does not match private or public",
     );
 
-    hdkey.depth = keyDv.getUint8(0);
-    hdkey.parentFingerprint = keyDv.getUint32(1, BUFFER_BE);
-    hdkey.index = keyDv.getUint32(5, BUFFER_BE);
-    hdkey.chainCode = keyBytes.subarray(9, 41);
-
+    let privateKey;
+    let publicKey;
     let key = keyBytes.subarray(41);
-    if (keyDv.getUint8(41) === 0) {
-      // private
-      assert(
-        version === versions.private,
-        "Version mismatch: version does not match private",
-      );
-      let privBytes = key.subarray(1); // cut off first 0x0 byte
-      await hdkey.setPrivateKey(privBytes);
-      hdkey.publicKey = await Utils.toPublicKey(privBytes);
+    //if (keyDv.getUint8(41) === 0)
+    if (key[0] === 0) {
+      privateKey = key.subarray(1); // cut off first 0x0 byte
     } else {
+      publicKey = key;
+    }
+
+    if (publicKey) {
       assert(
         version === versions.public,
         "Version mismatch: version does not match public",
@@ -449,12 +457,36 @@ var DashHd = ("object" === typeof module && exports) || {};
         key.length === 33 || key.length === 65,
         "Public key must be 33 or 65 bytes.",
       );
-      hdkey.publicKey = key;
       if (!skipVerification) {
-        hdkey.publicKey = await Utils.publicKeyNormalize(hdkey.publicKey);
+        publicKey = await Utils.publicKeyNormalize(publicKey);
       }
+    } else {
+      assert(
+        version === versions.private,
+        "Version mismatch: version does not match private",
+      );
+      publicKey = await Utils.toPublicKey(privateKey);
     }
 
+    // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
+    let hdkey = DashHd.create({
+      versions: versions,
+      depth: keyDv.getUint8(0),
+      parentFingerprint: keyDv.getUint32(1, BUFFER_BE),
+      index: keyDv.getUint32(5, BUFFER_BE),
+      chainCode: keyBytes.subarray(9, 41),
+      privateKey: privateKey,
+      publicKey: publicKey,
+    });
+
+    return hdkey;
+  };
+
+  DashHd.wipePrivateData = function (hdkey) {
+    if (hdkey.privateKey) {
+      Utils.secureErase(hdkey.privateKey);
+    }
+    hdkey.privateKey = null;
     return hdkey;
   };
 
@@ -507,13 +539,29 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDDeriveChild
+ * @param {hdkey} hdkey
  * @param {Number} index - includes HARDENED_OFFSET, if applicable
  * @param {Boolean} hardened
  * returns {Promise<HDKey>}
  */
 
 /**
+ * @callback HDDeriveHelper
+ * @param {Uint8Array} seed - derived from index and chain code, or root
+ * @param {HDDeriveHelperOptions} chainParts
+ * returns {Promise<HDDeriveHelperOptions>}
+ */
+
+/**
+ * @typedef HDDeriveHelperOptions
+ * @prop {Uint8Array} chainCode
+ * @prop {Uint8Array|undefined?} [privateKey]
+ * @prop {Uint8Array|undefined?} [publicKey]
+ */
+
+/**
  * @callback HDDerivePath
+ * @param {hdkey} hdkey
  * @param {String} path
  * returns {Promise<HDKey>}
  */
@@ -545,7 +593,14 @@ if ("object" === typeof module) {
  */
 
 /**
- * @callback HDGetString
+ * @callback HDGetXPrv
+ * @param {hdkey} hdkey
+ * @returns {Promise<String>}
+ */
+
+/**
+ * @callback HDGetXPub
+ * @param {hdkey} hdkey
  * @returns {Promise<String>}
  */
 
@@ -576,16 +631,6 @@ if ("object" === typeof module) {
  */
 
 /**
- * @callback HDMaybeGetBuffer
- * @returns {Uint8Array?}
- */
-
-/**
- * @callback HDMaybeGetString
- * @returns {Promise<String?>}
- */
-
-/**
  * @callback HDSecureErase
  * @param {Uint8Array} buf
  * @returns {void}
@@ -598,4 +643,5 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDWipePrivates
+ * @param {hdkey} hdkey
  */
