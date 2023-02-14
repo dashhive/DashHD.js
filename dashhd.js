@@ -4,13 +4,15 @@
  * @prop {HDDeriveChild} deriveChild - get the next child xkey (in a path segment)
  * @prop {HDDerivePath} derivePath - derive a full hd path from the given key
  * @prop {HDFingerprint} fingerprint
- * @prop {HDFromSeed} fromMasterSeed
- * @prop {HDFromXKey} fromExtendedKey
+ * @prop {HDFromSeed} fromSeed
+ * @prop {HDFromXKey} fromXKey
  * @prop {HDGetXPrv} getPrivateExtendedKey
  * @prop {HDGetXPub} getPublicExtendedKey
  * @prop {HDUtils} utils
  * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
  * @prop {Number} HARDENED_OFFSET - 0x80000000
+ * @prop {HDVersions} MAINNET - 'xprv' & 'xpub'
+ * @prop {HDVersions} TESTNET - 'tprv' & 'tpub'
  * @prop {HDDeriveHelper} _derive - helper
  */
 
@@ -27,7 +29,7 @@
 
 /**
  * @callback HDCreate
- * @param {hdkey} opts
+ * @param {HDKey} opts
  * @returns {HDKey}
  */
 
@@ -212,12 +214,14 @@ var DashHd = ("object" === typeof module && exports) || {};
   let KEY_SIZE = 33;
   let INDEXED_KEY_SIZE = 4 + KEY_SIZE;
   let XKEY_SIZE = 74;
+  let ACCOUNT_DEPTH = 3; // m/44'/5'/<0'[/0/0]
 
   // Bitcoin hardcoded by default, can use package `coininfo` for others
-  let BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
+  DashHd.MAINNET = { private: 0x0488ade4, public: 0x0488b21e };
+  DashHd.TESTNET = { private: 0x043587cf, public: 0x04358394 };
 
   DashHd.create = function ({
-    versions = BITCOIN_VERSIONS,
+    versions = DashHd.MAINNET,
     depth = 0,
     parentFingerprint = 0,
     index,
@@ -400,7 +404,7 @@ var DashHd = ("object" === typeof module && exports) || {};
     return n;
   }
 
-  DashHd.fromMasterSeed = async function (seed, versions = BITCOIN_VERSIONS) {
+  DashHd.fromSeed = async function ({ seed, versions = DashHd.MAINNET }) {
     let chainAndKeys = await DashHd._derive(seed, {
       chainCode: ROOT_CHAIN,
     });
@@ -416,27 +420,20 @@ var DashHd = ("object" === typeof module && exports) || {};
     );
   };
 
-  DashHd.fromExtendedKey = async function (
-    base58key,
-    versions,
-    skipVerification,
-  ) {
+  DashHd.fromXKey = async function ({
+    xkey, // base58key,
+    versions = DashHd.MAINNET,
+    normalizePublicKey = false,
+    bip32 = false,
+  }) {
     // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
-    versions = versions || BITCOIN_VERSIONS;
-    skipVerification = skipVerification || false;
 
-    //@ts-ignore - wth?
-    let keyInfo = await Utils.decode(base58key);
+    let keyInfo = await Utils.decode(xkey);
     let keyBytes = DashKeys.utils.hexToBytes(keyInfo.xprv || keyInfo.xpub);
     let keyDv = new DataView(keyBytes.buffer, 0, keyBytes.byteLength);
 
     //let version = keyDv.getUint32(0, BUFFER_BE);
-    // TODO tprv, tpub
     let version = parseInt(keyInfo.version, 16);
-    assert(
-      version === versions.private || version === versions.public,
-      "Version mismatch: does not match private or public",
-    );
 
     let privateKey;
     let publicKey;
@@ -448,35 +445,47 @@ var DashHd = ("object" === typeof module && exports) || {};
       publicKey = key;
     }
 
+    let xprvHex = "0x0" + versions.private.toString(16);
+    let xpubHex = "0x0" + versions.public.toString(16);
     if (publicKey) {
       assert(
         version === versions.public,
-        "Version mismatch: version does not match public",
+        `Version mismatch: version does not match ${xpubHex} (public)`,
       );
-      assert(
-        key.length === 33 || key.length === 65,
-        "Public key must be 33 or 65 bytes.",
-      );
-      if (!skipVerification) {
+      // at one point xy pubs (1 + 64 bytes) were allowed (per spec)
+      // but nothing in the ecosystem actually works that way
+      assert(key.length === 33, "Public key must be 33 (1 + 32) bytes.");
+      if (normalizePublicKey) {
         publicKey = await Utils.publicKeyNormalize(publicKey);
       }
     } else {
       assert(
         version === versions.private,
-        "Version mismatch: version does not match private",
+        `Version mismatch: version does not match ${xprvHex} (private)`,
       );
       publicKey = await Utils.toPublicKey(privateKey);
     }
 
-    // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
+    let depth = keyDv.getUint8(0);
+    if (!bip32) {
+      if (depth !== ACCOUNT_DEPTH) {
+        throw new Error(
+          `XKey with depth=${depth} does not represent an account (depth=${ACCOUNT_DEPTH})`,
+        );
+      }
+    }
+
+    let parentFingerprint = keyDv.getUint32(1, BUFFER_BE);
+    let index = keyDv.getUint32(5, BUFFER_BE);
+    let chainCode = keyBytes.subarray(9, 41);
     let hdkey = DashHd.create({
-      versions: versions,
-      depth: keyDv.getUint8(0),
-      parentFingerprint: keyDv.getUint32(1, BUFFER_BE),
-      index: keyDv.getUint32(5, BUFFER_BE),
-      chainCode: keyBytes.subarray(9, 41),
-      privateKey: privateKey,
-      publicKey: publicKey,
+      versions,
+      depth,
+      parentFingerprint,
+      index,
+      chainCode,
+      privateKey,
+      publicKey,
     });
 
     return hdkey;
@@ -539,7 +548,7 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDDeriveChild
- * @param {hdkey} hdkey
+ * @param {HDKey} hdkey
  * @param {Number} index - includes HARDENED_OFFSET, if applicable
  * @param {Boolean} hardened
  * returns {Promise<HDKey>}
@@ -561,7 +570,7 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDDerivePath
- * @param {hdkey} hdkey
+ * @param {HDKey} hdkey
  * @param {String} path
  * returns {Promise<HDKey>}
  */
@@ -574,17 +583,29 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDFromXKey
- * @param {String} base58key - base58check-encoded xkey
- * @param {HDVersions} [versions]
- * @param {Boolean} [skipVerification]
+ * @param {HDFromXKeyOptions} opts
+ * returns {Promise<HDKey>}
+ */
+
+/**
+ * @typedef HDFromXKeyOptions
+ * @prop {HDVersions} [versions]
+ * @prop {String} xkey - base58check-encoded xkey
+ * @prop {Boolean} [bip32] - allow non-account depths
+ * @prop {Boolean} [normalizePublicKey]
  * returns {Promise<HDKey>}
  */
 
 /**
  * @callback HDFromSeed
- * @param {Uint8Array} seedBuffer
- * @param {HDVersions} [versions]
+ * @param {HDFromSeedOptions} opts
  * @returns {Promise<HDKey>}
+ */
+
+/**
+ * @typedef HDFromSeedOptions
+ * @prop {Uint8Array} seed
+ * @prop {HDVersions} [versions]
  */
 
 /**
@@ -594,13 +615,13 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDGetXPrv
- * @param {hdkey} hdkey
+ * @param {HDKey} hdkey
  * @returns {Promise<String>}
  */
 
 /**
  * @callback HDGetXPub
- * @param {hdkey} hdkey
+ * @param {HDKey} hdkey
  * @returns {Promise<String>}
  */
 
@@ -643,5 +664,5 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDWipePrivates
- * @param {hdkey} hdkey
+ * @param {HDKey} hdkey
  */
