@@ -9,7 +9,9 @@
  * @prop {HDToAddr} toAddr
  * @prop {HDToWif} toWif
  * @prop {HDToXPrv} toXPrv
+ * @prop {HDToXKeyBytes} toXPrvBytes
  * @prop {HDToXPub} toXPub
+ * @prop {HDToXKeyBytes} toXPubBytes
  * @prop {HDUtils} utils
  * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
  * @prop {Number} HARDENED_OFFSET - 0x80000000
@@ -22,6 +24,7 @@
  * @prop {HDCreateAccountKey} _createAccount - helper
  * @prop {HDCreateXKey} _createXKey - helper
  * @prop {HDDeriveHelper} _derive - helper
+ * @prop {HDToXBytes} _toXBytes - helper
  */
 
 /**
@@ -295,20 +298,69 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   DashHd.toXPrv = async function (hdkey) {
-    if (!hdkey.privateKey) {
-      return null;
-    }
-
+    //@ts-ignore - will throw if null
+    let xprvBytes = DashHd._toXBytes(hdkey, hdkey.privateKey);
     //@ts-ignore - wth?
-    return await Utils.encodeXPrv(serialize(hdkey, hdkey.privateKey));
+    let xprv = await Utils.encodeXPrv(xprvBytes);
+    return xprv;
+  };
+
+  // TODO - missing custom version
+  DashHd.toXPrvBytes = function (hdkey) {
+    //@ts-ignore - will throw if null
+    let xprvPart = DashHd._toXBytes(hdkey, hdkey.privateKey);
+    let xprvBytes = new Uint8Array(xprvPart.length + 4);
+    let xkeyDv = new DataView(xprvBytes.buffer);
+    xkeyDv.setUint32(0, DashHd.MAINNET.private, BUFFER_BE);
+    xprvBytes.set(xprvPart, 4);
+    return xprvBytes;
   };
 
   DashHd.toXPub = async function (hdkey) {
-    if (!hdkey.publicKey) {
-      throw new Error("Missing public key");
-    }
+    let xpubBytes = DashHd._toXBytes(hdkey, hdkey.publicKey);
+    let xpub = await Utils.encodeXPub(xpubBytes);
+    return xpub;
+  };
 
-    return await Utils.encodeXPub(serialize(hdkey, hdkey.publicKey));
+  // TODO - missing custom version
+  DashHd.toXPubBytes = function (hdkey) {
+    let xpubPart = DashHd._toXBytes(hdkey, hdkey.publicKey);
+    let xpubBytes = new Uint8Array(xpubPart.length + 4);
+    let xkeyDv = new DataView(xpubBytes.buffer);
+    xkeyDv.setUint32(0, DashHd.MAINNET.private, BUFFER_BE);
+    xpubBytes.set(xpubPart, 4);
+    return xpubBytes;
+  };
+
+  DashHd._toXBytes = function (hdkey, keyBytes) {
+    if (!keyBytes) {
+      throw new Error("missing key bytes");
+    }
+    // version(4) is part of Base58Check (perhaps mistakenly)
+    // depth(1) + fingerprint(4) + index(4) + chain(32) + key(1 + 32)
+    let xkey = new Uint8Array(XKEY_SIZE);
+    let xkeyDv = new DataView(xkey.buffer);
+
+    xkeyDv.setUint8(0, hdkey.depth);
+
+    let fingerprint = 0x00000000;
+    if (hdkey.depth > 0) {
+      fingerprint = hdkey.parentFingerprint;
+    }
+    xkeyDv.setUint32(1, fingerprint, BUFFER_BE);
+    xkeyDv.setUint32(5, hdkey.index, BUFFER_BE);
+
+    xkey.set(hdkey.chainCode, 9);
+
+    let keyStart = 41;
+    let isPrivate = 32 === keyBytes.length;
+    if (isPrivate) {
+      xkey[keyStart] = 0x00;
+      keyStart += 1;
+    }
+    xkey.set(keyBytes, keyStart);
+
+    return xkey;
   };
 
   // IMPORTANT: never allow `await` (or other async) between writing to
@@ -607,37 +659,6 @@ var DashHd = ("object" === typeof module && exports) || {};
     }
   }
 
-  /**
-   * @param {HDKey} hdkey - TODO attach to hdkey
-   * @param {Uint8Array} keyBytes
-   */
-  function serialize(hdkey, keyBytes) {
-    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(1 + 32)
-    let xkey = new Uint8Array(XKEY_SIZE);
-    let xkeyDv = new DataView(xkey.buffer);
-
-    xkeyDv.setUint8(0, hdkey.depth);
-
-    let fingerprint = 0x00000000;
-    if (hdkey.depth > 0) {
-      fingerprint = hdkey.parentFingerprint;
-    }
-    xkeyDv.setUint32(1, fingerprint, BUFFER_BE);
-    xkeyDv.setUint32(5, hdkey.index, BUFFER_BE);
-
-    xkey.set(hdkey.chainCode, 9);
-
-    let keyStart = 41;
-    let isPrivate = 32 === keyBytes.length;
-    if (isPrivate) {
-      xkey[keyStart] = 0x00;
-      keyStart += 1;
-    }
-    xkey.set(keyBytes, keyStart);
-
-    return xkey;
-  }
-
   DashHd.HARDENED_OFFSET = HARDENED_OFFSET;
 })(("object" === typeof window && window) || {}, DashHd);
 if ("object" === typeof module) {
@@ -792,6 +813,19 @@ if ("object" === typeof module) {
  * @param {Uint8Array} pubBytes
  * @param {HDToAddressOpts} opts
  * @returns {Promise<String>}
+ */
+
+/**
+ * @callback HDToXKeyBytes
+ * @param {HDKey} hdkey
+ * @returns {Uint8Array}
+ */
+
+/**
+ * @callback HDToXBytes
+ * @param {HDKey} hdkey
+ * @param {Uint8Array?} keyBytes
+ * @returns {Uint8Array}
  */
 
 /**

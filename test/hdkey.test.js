@@ -274,18 +274,18 @@ describe("hdkey", function () {
   });
 
   describe("> when private key is null", function () {
-    it("privateExtendedKey should return null and not throw", async function () {
+    it("toXPrv should throw", async function () {
       var seed = "000102030405060708090a0b0c0d0e0f";
       var masterKey = await DashHd.fromSeed(hexToU8(seed));
 
       assert.ok(await DashHd.toXPrv(masterKey), "xpriv is truthy");
       DashHd.wipePrivateData(masterKey);
 
-      assert.doesNotThrow(async function () {
-        await masterKey.toXPrv();
+      await assert.rejects(async function () {
+        await DashHd.toXPrv(masterKey);
       });
 
-      assert.ok(!(await DashHd.toXPrv(masterKey)), "xpriv is falsy");
+      //assert.ok(!(await DashHd.toXPrv(masterKey)), "xpriv is falsy");
     });
   });
 
@@ -314,14 +314,18 @@ describe("hdkey", function () {
       const hdkey = await DashHd.fromSeed(hexToU8(fixtures.valid[6].seed));
       DashHd.wipePrivateData(hdkey);
       assert.equal(hdkey.privateKey, null);
-      assert.equal(await DashHd.toXPrv(hdkey), null);
-      assert.rejects(async function () {
+      await assert.rejects(async function () {
+        await DashHd.toXPrv(hdkey);
+      });
+      await assert.rejects(async function () {
         await sign(hdkey, new Uint8Array(32));
       }, "shouldn't be able to sign");
       const childKey = await DashHd.derivePath(hdkey, "m/0");
       assert.equal(await DashHd.toXPub(childKey), fixtures.valid[7].public);
       assert.equal(childKey.privateKey, null);
-      assert.equal(await DashHd.toXPrv(childKey), null);
+      await assert.rejects(async function () {
+        await DashHd.toXPrv(childKey);
+      });
     });
 
     it("should have correct data", async function () {
