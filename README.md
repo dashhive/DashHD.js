@@ -144,7 +144,7 @@ let DashPhrase = window.DashPhrase;
    ```
 5. Generate an _Address Key_
    ```js
-   let key = await xkey.deriveKey(use);
+   let key = await xkey.deriveAddress(use);
    ```
 6. Generate _WIF_ & _Address_
    ```js
@@ -198,7 +198,7 @@ However, production code will look more like this:
    for (let i = previousIndex; i < last; i += 1) {
      let key;
      try {
-       key = await xkey.deriveKey(i); // xkey from step 2
+       key = await xkey.deriveAddress(i); // xkey from step 2
      } catch (e) {
        last += 1;
        continue;
@@ -255,7 +255,7 @@ However, production code will look more like this:
   Account
     async deriveXKey(use = 0)
   XKey
-    async deriveKey(keyIndex)
+    async deriveAddress(keyIndex)
   Key
     { privateKey, publicKey }
   HDKey
@@ -391,7 +391,7 @@ let xprv =
 
 ```js
 let xkey = await DashHd.fromXKey(xkeyString, options);
-// { deriveKey,
+// { deriveAddress,
 //   versions: v, depth: n, parentFingerprint: p, index: 0,
 //   chainCode: c, privateKey: privOrNull, publicKey: pubBytes }
 ```
@@ -413,7 +413,7 @@ Private Key as in _Wallet Import Format_.
 
 ```js
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 ```
 
 ```js
@@ -436,7 +436,7 @@ Public Key as an _Address_.
 
 ```js
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 ```
 
 ```js
@@ -602,7 +602,7 @@ Keys can be derived
   let xkey = await account.deriveXKey(use);
 
   let addressIndex = 0;
-  let key = await xkey.deriveKey(addressIndex);
+  let key = await xkey.deriveAddress(addressIndex);
   ```
 
 - by path (not for loops):
@@ -627,7 +627,7 @@ loop at the lowest level that you can. For example:
 let xkey = await account.deriveXKey(use);
 
 for (let addressIndex = 0; addressIndex < 100; addressIndex += 1) {
-  let key = await xkey.deriveKey(addressIndex);
+  let key = await xkey.deriveAddress(addressIndex);
   // ...
 }
 ```
@@ -686,7 +686,7 @@ let xkey = await account.deriveXKey(use);
 
 ### XKey (depth 4)
 
-An non-hardened HD Key with a `deriveKey(addressIndex)` method.
+An non-hardened HD Key with a `deriveAddress(addressIndex)` method.
 
 Represents a non-hardened XPrv or XPub.
 
@@ -704,7 +704,7 @@ let use = DashHd.RECEIVE;
 let xkey = await account.deriveXKey(use);
 
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 // { ...,
 //  privateKey: privBytes, publicKey: pubBytes }
 ```
@@ -715,7 +715,7 @@ From an `xprv`:
 let xkey = await account.fromXKey(xprv);
 
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 // { ...,
 //  privateKey: privBytes, publicKey: pubBytes }
 ```
@@ -726,7 +726,7 @@ From an `xpub`:
 let xkey = await account.fromXKey(xprv);
 
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 // { ...,
 //  privateKey: null, publicKey: pubBytes }
 ```
@@ -752,7 +752,7 @@ let use = DashHd.RECEIVE;
 let xkey = await account.deriveXKey(use);
 
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 ```
 
 From an XPrv:
@@ -761,7 +761,7 @@ From an XPrv:
 let xkey = await account.fromXKey(xprv);
 
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 // { ...,
 //   privateKey: privBytes, publicKey: pubBytes }
 ```
@@ -772,7 +772,7 @@ From an XPub:
 let xkey = await account.fromXKey(xpub);
 
 let addressIndex = 0;
-let key = await xkey.deriveKey(addressIndex);
+let key = await xkey.deriveAddress(addressIndex);
 // { ...,
 //   privateKey: null, publicKey: pubBytes }
 ```
@@ -953,7 +953,7 @@ This is final piece, which you use for making and receiving payments.
 
    for (let i = index; i < last; i += 1) {
      try {
-       key = await xkey.deriveKey(index);
+       key = await xkey.deriveAddress(index);
      } catch (e) {
        // you may wish to mark the index as failed
      }

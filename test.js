@@ -55,7 +55,7 @@ async function getWalletKeys() {
   console.info();
 
   let addressIndex = 0;
-  let key = await xkey.deriveKey(addressIndex);
+  let key = await xkey.deriveAddress(addressIndex);
   let key1 = await DashHd.derivePath(wallet, "m/44'/5'/0'/0/0");
 
   let wif = await DashHd.toWif(key.privateKey);
@@ -75,7 +75,7 @@ async function getWalletKeys() {
     throw new Error("wallet addr derivation mismatch");
   }
   let xkey2 = await DashHd.fromXKey(xpub);
-  let key2 = await xkey2.deriveKey(addressIndex);
+  let key2 = await xkey2.deriveAddress(addressIndex);
   let addr2 = await DashHd.toAddr(key2.publicKey);
   if (addr !== addr2) {
     throw new Error("wallet xpub addr derivation mismatch");
@@ -114,7 +114,7 @@ async function getWalletKeys() {
   console.info();
 
   addressIndex = 1;
-  key = await xkey.deriveKey(addressIndex);
+  key = await xkey.deriveAddress(addressIndex);
   key1 = await DashHd.derivePath(wallet, "m/44'/5'/1'/1/1");
 
   wif = await DashHd.toWif(key.privateKey);
@@ -134,13 +134,13 @@ async function getWalletKeys() {
     throw new Error("wallet addr derivation mismatch");
   }
   xkey2 = await DashHd.fromXKey(xpub);
-  key2 = await xkey2.deriveKey(addressIndex);
+  key2 = await xkey2.deriveAddress(addressIndex);
   addr2 = await DashHd.toAddr(key2.publicKey);
   if (addr !== addr2) {
     throw new Error("wallet xpub addr derivation mismatch");
   }
   let xkey3 = await DashHd.fromXKey(xprv);
-  let key3 = await xkey3.deriveKey(addressIndex);
+  let key3 = await xkey3.deriveAddress(addressIndex);
   let wif3 = await DashHd.toWif(key3.privateKey);
   if (wif !== wif3) {
     throw new Error("wallet xprv wif derivation mismatch");

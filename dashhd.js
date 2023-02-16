@@ -504,14 +504,14 @@ var DashHd = ("object" === typeof module && exports) || {};
   /** @type {HDCreateXKey} */
   DashHd._createXKey = async function (xkey) {
     Object.assign(xkey, {
-      deriveKey,
+      deriveAddress,
     });
 
     /**
      * @param {Number} index - key index
      * @throws Error - if index cannot produce a valid public key
      */
-    async function deriveKey(index) {
+    async function deriveAddress(index) {
       let key = await DashHd.deriveChild(xkey, index, PUBLIC);
       return key;
     }
@@ -667,7 +667,7 @@ if ("object" === typeof module) {
 
 /**
  * @typedef HDXKeyPartial
- * @prop {HDDeriveKey} deriveKey
+ * @prop {HDDeriveAddress} deriveAddress
  */
 
 /**
@@ -725,7 +725,7 @@ if ("object" === typeof module) {
  */
 
 /**
- * @callback HDDeriveKey
+ * @callback HDDeriveAddress
  * @param {Number} index
  * @returns {Promise<HDKey>}
  * @throws Error - in the rare case the index can't produce a valid public key
