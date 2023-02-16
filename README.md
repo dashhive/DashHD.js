@@ -69,6 +69,7 @@ HD Wallet Seed:  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a1
       - XPrv and XPub Encoding
     - _Address Key_ Derivation
       - WIF and Address Encoding
+- [Glossary](#glossary)
 
 # Install
 
@@ -964,6 +965,320 @@ This is final piece, which you use for making and receiving payments.
    let wif = DashKeys.toWif(keys.privateKey); // "X....."
    let addr = DashKeys.toAddr(keys.publicKey); // "X..."
    ```
+
+# Glossary
+
+See also [Dash Tools Glossary](https://github.com/dashhive/dash-tools#glossary).
+
+- [Base2048](#base2048)
+- [Base58Check](#base58Check)
+- [BIPs](#bip)
+- [BIP-32](#bip-32)
+- [BIP-39](#bip-39)
+- [BIP-43](#bip-43)
+- [BIP-44](#bip-44)
+- [Curve](#curve)
+- [Derive (by Path)](#derive-by-path)
+- [Derived Child Key](#derived-child)
+- [Key Expansion](#key-expansion)
+- [HD Account](#hd-account)
+- [HD Address Key](#hd-address-key)
+- [HD Keys](#hd-keys)
+- [HD Passphrase Mnemonic](#hd-passphrase-mnemonic)
+- [HD Path](#hd-path)
+- [HD Wallet](#hd-wallet)
+- [HD X Key](#hd-x-key)
+- [Root Seed](#root-seed)
+- [Root Key](#root-key)
+- [Secp256k1](#secp256k1)
+- [Test Vectors](#test-vectors)
+- [XPrv](#xprv)
+- [XPub](#xpub)
+- [Zecret](#zecret)
+- [Zeed](#zeed)
+- [Zoomonic](#zoomonic)
+
+## Base2048
+
+Also: Base2048, _BIP39_, _BIP-0039_
+
+Rather than a bank of 2, 16, 32, 58, 62, or 64 characters, \
+you can encode data using a bank of whole words. \
+If you use 2048 words, each word represents 11 _bits_. \
+12 words represent 131 _bits_ of information. \
+Any extra bits are used for checksumming the data. \
+
+See [_HD Passphrase Mnemonic_](#hd-passphrase-mnemonic).
+
+## Base58Check
+
+The encoding format used for sharing _XPrv_ and _XPub_ Keys (_X Keys_). \
+(among other things, such as _WIF_ and _Address_)
+
+```text
+xprvA2L7qar7dyJNhxnE47gK5J6cc1oEHQuAk8WrZLnLeHTtnkeyP4w6Eo6Tt65trtdkTRtx8opazGnLbpWrkhzNaL6ZsgG3sQmc2yS8AxoMjfZ
+```
+
+```text
+xpub6FKUF6P1ULrfvSrhA9DKSS3MA3digsd27MSTMjBxCczsfYz7vcFLnbQwjP9CsAfEJsnD4UwtbU43iZaibv4vnzQNZmQAVcufN4r3pva8kTz
+```
+
+## BIP
+
+Also: BIPs
+
+Bitcoin Improvement Proposal(s). \
+Specification Drafts / RFCs (Request For Comments).
+
+## BIP-32
+
+See [_HD Keys_](#hd-keys).
+
+## BIP-39
+
+Also: Base2048, _BIP39_, _BIP-0039_
+
+BIP for [_HD Passphrase Mnemonic_](#hd-passphrase-mnemonic).
+
+## BIP-43
+
+BIP for the _Purpose_ index of the _HD Path_.
+
+```js
+`m/${purpose}'`;
+```
+
+This is the basis of [BIP-44][#bip-44] defining HD Paths as `m/44'/`.
+
+See [_HD Keys_](#hd-keys).
+
+## BIP-44
+
+See [_HD Path_](#hd-path).
+
+## Curve
+
+Related to parameters of Elliptic Curve (ECDSA) cryptography / algorithms.
+
+A single X value produces two Y values on a curve (rather than 1 on a line).
+
+In rare instances, an X value may produce **no points** on the curve.
+
+## Derive (by Path)
+
+To split an HD Path by `/` and then iterate to derive each index (_Child_) in
+turn.
+
+**Cannot be reversed**.
+
+See [`derivePath(hdkey, hdpath)`][#derivePath-hdkey-hdpath].
+
+## Derived Child
+
+A key directly derived from another key by an _HD Path_ index. \
+(typically referring to a single index of the path, not the whole)
+
+See
+[`deriveChild(hdkey, index, isHardened)`][#derivePath-hdkey-index-ishardened].
+
+## Key Expansion
+
+An algorithm that creates a larger (byte-size) output than its input. \
+Typically uses hashing algos: HMAC, SHA-2, SHA-3, etc. \
+May combine multiple algos together. \
+Usually intentionally slow. \
+May run a high number of "Rounds" in succession. \
+(typically hundreds or thousands).
+
+_Passhrase Mnemonics_ to _Seed_ (BIP-39) uses _PBKDF2_. \
+_HD Keys_ (BIP-44) use HMAC and *Secp256k1 Tweak*ing for each index.
+
+See also:
+
+- `DashPhrase.toSeed(wordList)`
+- `DashHd.fromSeed(seedBytes)`
+- `DashHd.deriveChild(hdkey, index, isHardened)`
+
+## HD Account
+
+An HD Key derived at `m/44'/5'/n'` (Depth 3) of the HD Path.
+
+See [API: Key Types](#key-types).
+
+## HD Address Key
+
+Also: _Key_, _HD Private Key_, _WIF_, _Address_
+
+An HD Key at final depth `m/44'/5'/0'/0/0` (Depth 5) of an _HD Path_. \
+Can be encoded as _WIF_ or _Address_ for making or receiving payments.
+
+See also [API: Key Types](#key-types).
+
+## HD Keys
+
+Also: _Hierarchical Deterministic Keys_, _BIP-32_, _BIP-44_
+
+Any of generic or purpose-specific keys derived deterministically form a seed.
+
+See more at [API: Key Types](#key-types) (code above) and [HD Path](#hd-path).
+
+## HD Passphrase Mnemonic
+
+Also: _Mnemonic for Generating Hierarchical Deterministic Keys_, _HD Wallet_,
+_BIP-39_
+
+12 words used to derive an HD Seed. \
+(11¾ for entropy, ¼ for checksum)
+
+Ex: `zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong`
+
+Not used _directly_ in this library, but...\
+it _is_ how the HD Seeds used here are typically generated.
+
+See [DashPhrase.js](dash-phrase).
+
+## HD Path
+
+The path that defines an HD Key - typically of the BIP-44 variety:
+
+- a _Root_, ex: `m` (depth 0, the wallet, straight from the seed)
+- an _Coin Key_, ex: `m/44'/5'` (depth 2, sometimes called Wallet)
+- an _Account_, ex: `m/44'/5'/0'` (depth 3)
+- an _X Key_, ex: `m/44'/5'/0'/0` (depth 4, also the Use)
+- an _Address Key_, ex: `m/44'/5'/0'/0/0` (depth 5, the end)
+
+In general:
+
+```js
+let hdpath = `m/${purpose}'/${coinType}'/${account}'/${use}/${index}`;
+```
+
+For DASH:
+
+```js
+let hdpath = `m/44'/5'/${account}'/${use}/${index}`;
+```
+
+See also [API: Key Types](#key-types) (code above).
+
+## HD Wallet
+
+Either the _Root Key_ at `m` (Depth 0), directly from the _Seed_, \
+or the _Coin Key_ at `m/44'/5'` (Depth 2), of the _HD Path_. \
+Sometimes also used to mean _HD Account_ at `m/44'/5'/n'`.
+
+Here we typically use it to mean the _Root Key_. \
+(because we're focus on DASH more so than other coins)
+
+See also [API: Key Types](#key-types).
+
+## HD X Key
+
+Also: _XKey_, _XPrv_, _XPub_, _Use Key_, _Use Index_, _Extended Key_.
+
+An HD Key derived at `m/44'/5'/0'/n` (Depth 4), of the _HD Path_.
+
+Here we typically use it to mean the _Root Key_. \
+(because we're focus on DASH more so than other coins)
+
+See also [API: Key Types](#key-types).
+
+## Root Seed
+
+Also: Master Seed, Seed, HD Seed
+
+Either:
+
+- 64 random bytes
+- a 64-byte hash derived from a _Passphrase Mnemonic_
+
+**Cannot be reversed**.
+
+## Root Key
+
+Also: _HD Wallet_, _Master Key_, _HD Master_
+
+An HD Key of `m` (Depth 0), as derived directly from the Seed.
+
+See also [API: Key Types](#key-types).
+
+## Secp256k1
+
+A specific set of parameters "the curve" used by most cryptocurrencies.
+
+See [Curve](#curve).
+
+## Test Vectors
+
+The well-known values used for testing, demos, debugging, and development:
+
+- DashPhrase / BIP-39:
+  - <https://github.com/trezor/python-mnemonic/blob/master/vectors.json>
+  - Includes the [_Zoomonic_](#zoomonic), [_Zecret_](#zecret), and
+    [_Zeed_](#zeed).
+- Generic HD Key / BIP-32:
+  - <https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki#test-vectors>
+- DashKeys / BIP-44:
+  - [Zoomonic](#zoomonic)
+
+## XPrv
+
+Also: _Extended Private Key_, _XPriv_, _X Prv_, _X Priv_
+
+Specifically the Base58Check-encoded form of an HD Key at Depth 4. \
+(the _X Key_, a.k.a. _Use Key_, including the _Private Key_)\_ \
+Can be used to derive any number of *WIF*s and *Address*es.
+
+```text
+xprvA2L7qar7dyJNhxnE47gK5J6cc1oEHQuAk8WrZLnLeHTtnkeyP4w6Eo6Tt65trtdkTRtx8opazGnLbpWrkhzNaL6ZsgG3sQmc2yS8AxoMjfZ
+```
+
+See [HD X Key](#hd-x-key).
+
+## XPub
+
+Also: _Extended Pubilc Key_, _X Pub_
+
+Specifically the Base58Check-encoded form of an HD Key. \
+(just the public key) Can be used to derive any number of receiving *Address*es.
+
+```text
+xpub6FKUF6P1ULrfvSrhA9DKSS3MA3digsd27MSTMjBxCczsfYz7vcFLnbQwjP9CsAfEJsnD4UwtbU43iZaibv4vnzQNZmQAVcufN4r3pva8kTz
+```
+
+See [XPrv](#xprv), [HD X Key](#hd-x-key).
+
+## Zecret
+
+The _Secret Salt_ used for the BIP-32 Test Vectors.
+
+```text
+TREZOR
+```
+
+```js
+let secretSalt = "TREZOR";
+```
+
+Comes from the fact that the company Trezor (a hardware wallet) was involved in
+creating the reference implementation and Test Vectors.
+
+## Zeed
+
+The canonical Seed (generated from the Zoomonic salted with "TREZOR"), \
+to be used in documentation, examples, and test fixtures.
+
+```txt
+ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
+```
+
+## Zoomonic
+
+```txt
+Passphrase (Mnemonic)  :  zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong
+Secret (Salt Password) :  TREZOR
+Seed                   :  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
+```
 
 # References
 
