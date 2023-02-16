@@ -615,7 +615,10 @@ var DashHd = ("object" === typeof module && exports) || {};
 
     xkeyDv.setUint8(0, hdkey.depth);
 
-    let fingerprint = (hdkey.depth && hdkey.parentFingerprint) || 0x00000000;
+    let fingerprint = 0x00000000;
+    if (hdkey.depth > 0) {
+      fingerprint = hdkey.parentFingerprint;
+    }
     xkeyDv.setUint32(1, fingerprint, BUFFER_BE);
     xkeyDv.setUint32(5, hdkey.index, BUFFER_BE);
 
