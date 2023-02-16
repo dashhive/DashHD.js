@@ -293,11 +293,8 @@ var DashHd = ("object" === typeof module && exports) || {};
       return null;
     }
 
-    let key = new Uint8Array(KEY_SIZE);
-    key.set([0], 0);
-    key.set(hdkey.privateKey, 1);
     //@ts-ignore - wth?
-    return await Utils.encodeXPrv(serialize(hdkey, key));
+    return await Utils.encodeXPrv(serialize(hdkey, hdkey.privateKey));
   };
 
   DashHd.toXPub = async function (hdkey) {
@@ -606,9 +603,9 @@ var DashHd = ("object" === typeof module && exports) || {};
 
   /**
    * @param {HDKey} hdkey - TODO attach to hdkey
-   * @param {Uint8Array} key
+   * @param {Uint8Array} keyBytes
    */
-  function serialize(hdkey, key) {
+  function serialize(hdkey, keyBytes) {
     // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(33)
     let xkey = new Uint8Array(XKEY_SIZE);
     let xkeyDv = new DataView(xkey.buffer);
@@ -623,7 +620,14 @@ var DashHd = ("object" === typeof module && exports) || {};
     xkeyDv.setUint32(5, hdkey.index, BUFFER_BE);
 
     xkey.set(hdkey.chainCode, 9);
-    xkey.set(key, 41);
+
+    let keyStart = 41;
+    let isPrivate = 32 === keyBytes.length;
+    if (isPrivate) {
+      xkey[keyStart] = 0x00;
+      keyStart += 1;
+    }
+    xkey.set(keyBytes, keyStart);
 
     return xkey;
   }
