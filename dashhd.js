@@ -21,11 +21,11 @@
 /**
  * @callback HDCreate
  * @param {HDVersions} [versions]
- * @returns {hdkey}
+ * @returns {HDKey}
  */
 
 /**
- * @typedef hdkey
+ * @typedef HDKey
  * @prop {Uint8Array} chainCode - extra 32-bytes of shared entropy for xkeys
  * @prop {Number} depth - of hd path - typically 0 is seed, 1-3 hardened, 4-5 are not
  * @prop {Uint8Array} identifier - same bytes as pubKeyHash, but used for id
@@ -220,7 +220,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   let BITCOIN_VERSIONS = { private: 0x0488ade4, public: 0x0488b21e };
 
   DashHd.create = function (versions) {
-    /** @type {hdkey} */
+    /** @type {HDKey} */
     let hdkey = {};
     /** @type {Uint8Array?} */
     let _privateKey = null;
@@ -495,7 +495,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   }
 
   /**
-   * @param {hdkey} hdkey - TODO attach to hdkey
+   * @param {HDKey} hdkey - TODO attach to hdkey
    * @param {Number} version
    * @param {Uint8Array} key
    */
@@ -549,13 +549,13 @@ if ("object" === typeof module) {
 /**
  * @callback HDDeriveChild
  * @param {Number} index - includes HARDENED_OFFSET, if applicable
- * returns {Promise<hdkey>}
+ * returns {Promise<HDKey>}
  */
 
 /**
  * @callback HDDerivePath
  * @param {String} path
- * returns {Promise<hdkey>}
+ * returns {Promise<HDKey>}
  */
 
 /**
@@ -568,14 +568,14 @@ if ("object" === typeof module) {
  * @param {String} base58key - base58check-encoded xkey
  * @param {HDVersions} [versions]
  * @param {Boolean} [skipVerification]
- * returns {Promise<hdkey>}
+ * returns {Promise<HDKey>}
  */
 
 /**
  * @callback HDFromSeed
  * @param {Uint8Array} seedBuffer
  * @param {HDVersions} [versions]
- * @returns {Promise<hdkey>}
+ * @returns {Promise<HDKey>}
  */
 
 /**
