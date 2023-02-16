@@ -3,16 +3,24 @@
  * @prop {HDCreate} create
  * @prop {HDDeriveChild} deriveChild - get the next child xkey (in a path segment)
  * @prop {HDDerivePath} derivePath - derive a full hd path from the given key
- * @prop {HDFingerprint} fingerprint
+ * @prop {HDFingerprint} _fingerprint
  * @prop {HDFromSeed} fromSeed
  * @prop {HDFromXKey} fromXKey
- * @prop {HDGetXPrv} getPrivateExtendedKey
- * @prop {HDGetXPub} getPublicExtendedKey
+ * @prop {HDToAddr} toAddr
+ * @prop {HDToWif} toWif
+ * @prop {HDToXPrv} toXPrv
+ * @prop {HDToXPub} toXPub
  * @prop {HDUtils} utils
  * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
  * @prop {Number} HARDENED_OFFSET - 0x80000000
  * @prop {HDVersions} MAINNET - 'xprv' & 'xpub'
  * @prop {HDVersions} TESTNET - 'tprv' & 'tpub'
+ * @prop {true} HARDENED - for hardened derivation
+ * @prop {false} PUBLIC - for public derivation
+ * @prop {Number} RECEIVE - use 0 (external)
+ * @prop {Number} CHANGE - use 1 (internal)
+ * @prop {HDCreateAccountKey} _createAccount - helper
+ * @prop {HDCreateXKey} _createXKey - helper
  * @prop {HDDeriveHelper} _derive - helper
  */
 
@@ -29,19 +37,31 @@
 
 /**
  * @callback HDCreate
- * @param {HDKey} opts
+ * @param {HDKeyOptions} opts
  * @returns {HDKey}
  */
 
 /**
  * @typedef HDKey
- * @prop {Uint8Array} chainCode - extra 32-bytes of shared entropy for xkeys
- * @prop {Number} depth - of hd path - typically 0 is seed, 1-3 hardened, 4-5 are not
- * @prop {Number} index - the final segment of an HD Path, the index of the wif/addr
- * @prop {Number} parentFingerprint - 32-bit int, slice of id, stored in child xkeys
- * @prop {Uint8Array} publicKey
  * @prop {HDVersions} versions - magic bytes for base58 prefix
+ * @prop {Number} depth - of hd path - typically 0 is seed, 1-3 hardened, 4-5 are not
+ * @prop {Number} parentFingerprint - 32-bit int, slice of id, stored in child xkeys
+ * @prop {Number} index - the final segment of an HD Path, the index of the wif/addr
+ * @prop {Uint8Array} chainCode - extra 32-bytes of shared entropy for xkeys
  * @prop {Uint8Array|undefined?} [privateKey]
+ * @prop {Uint8Array} publicKey
+ */
+
+/**
+ * @typedef HDKeyOptions
+ * @prop {HDVersions?} [versions]
+ * @prop {Number?} [depth]
+ * @prop {Number?} [parentFingerprint]
+ * @prop {Number} index
+ * @prop {Uint8Array} chainCode
+ * @prop {Uint8Array?} [privateKey]
+ * @prop {Uint8Array} publicKey
+
  */
 
 /** @type {DashHD} */
@@ -54,11 +74,14 @@ var DashHd = ("object" === typeof module && exports) || {};
   const BUFFER_BE = false;
   const COMPRESSED = true;
 
+  const HARDENED = true;
+  const PUBLIC = false;
+
   //@ts-ignore
   let Crypto = window.crypto || require("crypto");
 
   //@ts-ignore
-  /** @type {import('../node_modules/dashkeys/dashkeys.js')} */
+  /** @type {import('dashkeys').DashKeys} */
   //@ts-ignore
   let DashKeys = window.DashKeys || require("dashkeys");
 
@@ -214,16 +237,24 @@ var DashHd = ("object" === typeof module && exports) || {};
   let KEY_SIZE = 33;
   let INDEXED_KEY_SIZE = 4 + KEY_SIZE;
   let XKEY_SIZE = 74;
-  let ACCOUNT_DEPTH = 3; // m/44'/5'/<0'[/0/0]
+  let XKEY_DEPTH = 4; // m/44'/5'/0'/<0>[/0]
 
   // Bitcoin hardcoded by default, can use package `coininfo` for others
   DashHd.MAINNET = { private: 0x0488ade4, public: 0x0488b21e };
   DashHd.TESTNET = { private: 0x043587cf, public: 0x04358394 };
 
+  // Derivation types
+  DashHd.HARDENED = HARDENED;
+  DashHd.PUBLIC = PUBLIC;
+
+  // Use types
+  DashHd.RECEIVE = 0;
+  DashHd.CHANGE = 1;
+
   DashHd.create = function ({
-    versions = DashHd.MAINNET,
-    depth = 0,
-    parentFingerprint = 0,
+    versions,
+    depth,
+    parentFingerprint,
     index,
     chainCode,
     privateKey,
@@ -232,10 +263,10 @@ var DashHd = ("object" === typeof module && exports) || {};
     /** @type {HDKey} */
     let hdkey = {};
 
-    hdkey.versions = versions;
-    hdkey.depth = depth;
-    hdkey.parentFingerprint = parentFingerprint;
-    hdkey.index = index;
+    hdkey.versions = versions ?? DashHd.MAINNET;
+    hdkey.depth = depth ?? 0;
+    hdkey.parentFingerprint = parentFingerprint ?? 0;
+    hdkey.index = index ?? 0;
     hdkey.chainCode = chainCode;
     hdkey.privateKey = privateKey;
     hdkey.publicKey = publicKey;
@@ -243,7 +274,21 @@ var DashHd = ("object" === typeof module && exports) || {};
     return hdkey;
   };
 
-  DashHd.getPrivateExtendedKey = async function (hdkey) {
+  DashHd.toAddr = async function (pubBytes, opts) {
+    if (pubBytes.length !== 33) {
+      throw new Error("expected a public key (size 1 + 32)");
+    }
+    return await DashKeys.encodeKey(pubBytes, opts);
+  };
+
+  DashHd.toWif = async function (privBytes, opts) {
+    if (privBytes.length !== 32) {
+      throw new Error("expected a private key (size 32)");
+    }
+    return await DashKeys.encodeKey(privBytes);
+  };
+
+  DashHd.toXPrv = async function (hdkey) {
     if (!hdkey.privateKey) {
       return null;
     }
@@ -255,7 +300,7 @@ var DashHd = ("object" === typeof module && exports) || {};
     return await Utils.encodeXPrv(serialize(hdkey, key));
   };
 
-  DashHd.getPublicExtendedKey = async function (hdkey) {
+  DashHd.toXPub = async function (hdkey) {
     if (!hdkey.publicKey) {
       throw new Error("Missing public key");
     }
@@ -269,7 +314,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   let _indexBuffer = new Uint8Array(4);
   let _indexDv = new DataView(_indexBuffer.buffer);
 
-  DashHd.deriveChild = async function (hdkey, index, hardened) {
+  DashHd.deriveChild = async function (hdkey, index, hardened = HARDENED) {
     let seed = new Uint8Array(INDEXED_KEY_SIZE);
     if (hardened) {
       if (!hdkey.privateKey) {
@@ -307,7 +352,7 @@ var DashHd = ("object" === typeof module && exports) || {};
 
     let versions = hdkey.versions;
     let depth = hdkey.depth + 1;
-    let parentFingerprint = await DashHd.fingerprint(hdkey.publicKey);
+    let parentFingerprint = await DashHd._fingerprint(hdkey.publicKey);
     return Object.assign(
       {
         versions,
@@ -375,7 +420,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   /** @type {HDFingerprint} */
-  DashHd.fingerprint = async function (pubBytes) {
+  DashHd._fingerprint = async function (pubBytes) {
     if (!pubBytes) {
       throw new Error("Public key has not been set");
     }
@@ -404,12 +449,16 @@ var DashHd = ("object" === typeof module && exports) || {};
     return n;
   }
 
-  DashHd.fromSeed = async function ({ seed, versions = DashHd.MAINNET }) {
+  DashHd.fromSeed = async function (seed, opts) {
+    let purpose = opts?.purpose ?? 44;
+    let coinType = opts?.coinType ?? 5;
+    let versions = opts?.versions || DashHd.MAINNET;
+
     let chainAndKeys = await DashHd._derive(seed, {
       chainCode: ROOT_CHAIN,
     });
 
-    return Object.assign(
+    let hdkey = Object.assign(
       {
         versions: versions,
         depth: 0,
@@ -417,16 +466,61 @@ var DashHd = ("object" === typeof module && exports) || {};
         index: 0,
       },
       chainAndKeys,
+      {
+        deriveAccount,
+      },
     );
+
+    /** @type {HDDeriveAccount} */
+    async function deriveAccount(account) {
+      let hdpath = `m/${purpose}'/${coinType}'/${account}'`;
+      let accountKey = await DashHd.derivePath(hdkey, hdpath);
+
+      accountKey = await DashHd._createAccount(accountKey);
+      return accountKey;
+    }
+
+    return hdkey;
   };
 
-  DashHd.fromXKey = async function ({
-    xkey, // base58key,
-    versions = DashHd.MAINNET,
-    normalizePublicKey = false,
-    bip32 = false,
-  }) {
-    // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
+  /** @type {HDCreateAccountKey} */
+  DashHd._createAccount = async function (accountKey) {
+    Object.assign(accountKey, {
+      deriveXKey,
+    });
+
+    async function deriveXKey(use = DashHd.RECEIVE) {
+      let xkey = await DashHd.deriveChild(accountKey, use, PUBLIC);
+      xkey = DashHd._createXKey(xkey);
+      return xkey;
+    }
+
+    return accountKey;
+  };
+
+  /** @type {HDCreateXKey} */
+  DashHd._createXKey = async function (xkey) {
+    Object.assign(xkey, {
+      deriveKey,
+    });
+
+    /**
+     * @param {Number} index - key index
+     * @throws Error - if index cannot produce a valid public key
+     */
+    async function deriveKey(index) {
+      let key = await DashHd.deriveChild(xkey, index, PUBLIC);
+      return key;
+    }
+
+    return xkey;
+  };
+
+  DashHd.fromXKey = async function (xkey, opts) {
+    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(33)
+    let versions = opts?.versions ?? DashHd.MAINNET;
+    let normalizePublicKey = opts?.normalizePublicKey ?? false;
+    let bip32 = opts?.bip32 ?? false;
 
     let keyInfo = await Utils.decode(xkey);
     let keyBytes = DashKeys.utils.hexToBytes(keyInfo.xprv || keyInfo.xpub);
@@ -468,9 +562,9 @@ var DashHd = ("object" === typeof module && exports) || {};
 
     let depth = keyDv.getUint8(0);
     if (!bip32) {
-      if (depth !== ACCOUNT_DEPTH) {
+      if (depth !== XKEY_DEPTH) {
         throw new Error(
-          `XKey with depth=${depth} does not represent an account (depth=${ACCOUNT_DEPTH})`,
+          `XKey with depth=${depth} does not represent an account (depth=${XKEY_DEPTH}), set { bip32: true } for xkeys with arbirtrary depths`,
         );
       }
     }
@@ -478,7 +572,7 @@ var DashHd = ("object" === typeof module && exports) || {};
     let parentFingerprint = keyDv.getUint32(1, BUFFER_BE);
     let index = keyDv.getUint32(5, BUFFER_BE);
     let chainCode = keyBytes.subarray(9, 41);
-    let hdkey = DashHd.create({
+    let hdkey = DashHd._createXKey({
       versions,
       depth,
       parentFingerprint,
@@ -488,6 +582,7 @@ var DashHd = ("object" === typeof module && exports) || {};
       publicKey,
     });
 
+    hdkey = DashHd._createXKey(hdkey);
     return hdkey;
   };
 
@@ -514,7 +609,7 @@ var DashHd = ("object" === typeof module && exports) || {};
    * @param {Uint8Array} key
    */
   function serialize(hdkey, key) {
-    // => version(4) || depth(1) || fingerprint(4) || index(4) || chain(32) || key(33)
+    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(33)
     let xkey = new Uint8Array(XKEY_SIZE);
     let xkeyDv = new DataView(xkey.buffer);
 
@@ -539,12 +634,58 @@ if ("object" === typeof module) {
 // Type Definitions
 
 /**
+ * @typedef {HDKey & HDAccountPartial} HDAccount
+ */
+
+/**
+ * @typedef HDAccountPartial
+ * @prop {HDDeriveXKey} deriveXKey
+ */
+
+/**
  * @typedef HDVersions
  * @prop {Number} private - 32-bit (4-byte) int (encodes to 'xprv' in base58)
  * @prop {Number} public - 32-bit (4-byte) int (encodes to 'xpub' in base58)
  */
 
+/**
+ * @typedef {HDKey & HDXKeyPartial} HDXKey
+ */
+
+/**
+ * @typedef HDXKeyPartial
+ * @prop {HDDeriveKey} deriveKey
+ */
+
+/**
+ * @typedef {HDKey & HDWalletPartial} HDWallet
+ */
+
+/**
+ * @typedef HDWalletPartial
+ * @prop {HDDeriveAccount} deriveAccount
+ */
+
 // Function Definitions
+
+/**
+ * @callback HDCreateAccountKey
+ * @param {HDKey} walletKey
+ * @returns HDAccount
+ */
+
+/**
+ * @callback HDCreateXKey
+ * @param {HDKey} accountKey
+ * @returns HDXKey
+ */
+
+/**
+ * @callback HDDeriveAccount
+ * @param {Number} account
+ * @returns {Promise<HDAccount>}
+ * @throws Error - in the rare case the index can't produce a valid public key
+ */
 
 /**
  * @callback HDDeriveChild
@@ -552,6 +693,7 @@ if ("object" === typeof module) {
  * @param {Number} index - includes HARDENED_OFFSET, if applicable
  * @param {Boolean} hardened
  * returns {Promise<HDKey>}
+ * @throws Error - in the rare case the index can't produce a valid public key
  */
 
 /**
@@ -559,6 +701,7 @@ if ("object" === typeof module) {
  * @param {Uint8Array} seed - derived from index and chain code, or root
  * @param {HDDeriveHelperOptions} chainParts
  * returns {Promise<HDDeriveHelperOptions>}
+ * @throws Error - in the rare case the index can't produce a valid public key
  */
 
 /**
@@ -569,10 +712,25 @@ if ("object" === typeof module) {
  */
 
 /**
+ * @callback HDDeriveKey
+ * @param {Number} index
+ * @returns {Promise<HDKey>}
+ * @throws Error - in the rare case the index can't produce a valid public key
+ */
+
+/**
  * @callback HDDerivePath
  * @param {HDKey} hdkey
  * @param {String} path
  * returns {Promise<HDKey>}
+ * @throws Error - in the rare case the index can't produce a valid public key
+ */
+
+/**
+ * @callback HDDeriveXKey
+ * @param {Number} use - typically 0 (RECEIVE) or 1 (CHANGE)
+ * @returns {Promise<HDXKey>}
+ * @throws Error - in the rare case the index can't produce a valid public key
  */
 
 /**
@@ -583,8 +741,9 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDFromXKey
- * @param {HDFromXKeyOptions} opts
- * returns {Promise<HDKey>}
+ * @param {String} xkey - Base58Check-encoded xprv or xpub
+ * @param {HDFromXKeyOptions} [opts]
+ * returns {Promise<HDXKey>}
  */
 
 /**
@@ -598,14 +757,16 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDFromSeed
+ * @param {Uint8Array} seedBytes
  * @param {HDFromSeedOptions} opts
- * @returns {Promise<HDKey>}
+ * @returns {Promise<HDWallet>}
  */
 
 /**
  * @typedef HDFromSeedOptions
- * @prop {Uint8Array} seed
- * @prop {HDVersions} [versions]
+ * @prop {Number} [purpose] - 44 (BIP-44) by default
+ * @prop {Number} [coinType] - 5 (DASH) by default
+ * @prop {HDVersions} [versions] - mainnet ('xprv', 'xpub') by default
  */
 
 /**
@@ -614,13 +775,32 @@ if ("object" === typeof module) {
  */
 
 /**
- * @callback HDGetXPrv
+ * @callback HDToAddr
+ * @param {Uint8Array} pubBytes
+ * @param {HDToAddressOpts} opts
+ * @returns {Promise<String>}
+ */
+
+/**
+ * @callback HDToWif
+ * @param {Uint8Array} privBytes
+ * @param {HDToAddressOpts} opts
+ * @returns {Promise<String>}
+ */
+
+/**
+ * @typedef HDToAddressOpts
+ * @prop {String} version
+ */
+
+/**
+ * @callback HDToXPrv
  * @param {HDKey} hdkey
  * @returns {Promise<String>}
  */
 
 /**
- * @callback HDGetXPub
+ * @callback HDToXPub
  * @param {HDKey} hdkey
  * @returns {Promise<String>}
  */
