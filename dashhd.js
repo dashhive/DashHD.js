@@ -100,13 +100,19 @@ var DashHd = ("object" === typeof module && exports) || {};
 
   /**
    * @param {Uint8Array} keyBytes
-   * TODO - pass tprv
+   * @param {Object} opts
+   * @param {Number} [opts.version]
    */
-  Utils.encodeXPrv = async function (keyBytes) {
+  Utils.encodeXPrv = async function (keyBytes, opts) {
     //@ts-ignore - wth?
     let DashKeys = window.DashKeys || require("dashkeys");
+    let version = "xprv";
+    if (opts?.version) {
+      version = opts?.version.toString(16);
+      version = version.padStart(8, "0");
+    }
     //@ts-ignore
-    return await DashKeys.encodeKey(keyBytes, { version: "xprv" });
+    return await DashKeys.encodeKey(keyBytes, { version });
   };
 
   /**
@@ -514,7 +520,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   DashHd.fromXKey = async function (xkey, opts) {
-    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(33)
+    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(1 + 32)
     let versions = opts?.versions ?? DashHd.MAINNET;
     let normalizePublicKey = opts?.normalizePublicKey ?? false;
     let bip32 = opts?.bip32 ?? false;
@@ -606,7 +612,7 @@ var DashHd = ("object" === typeof module && exports) || {};
    * @param {Uint8Array} keyBytes
    */
   function serialize(hdkey, keyBytes) {
-    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(33)
+    // version(4) + depth(1) + fingerprint(4) + index(4) + chain(32) + key(1 + 32)
     let xkey = new Uint8Array(XKEY_SIZE);
     let xkeyDv = new DataView(xkey.buffer);
 
