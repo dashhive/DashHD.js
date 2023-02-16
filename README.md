@@ -100,7 +100,7 @@ let DashPhrase = require("dashphrase");
 
 ```html
 <script src="https://unpkg.com/@dashincubator/secp256k1.js"></script>
-<script src="https://unpkg.com/dashkeys@0.9/dashkeys.js"></script>
+<script src="https://unpkg.com/dashkeys@1.x/dashkeys.js"></script>
 <script src="https://unpkg.com/dashhd@3.x/dashhd.js"></script>
 ```
 
