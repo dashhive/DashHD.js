@@ -14,22 +14,22 @@ var Secp256k1 = require("@dashincubator/secp256k1");
 /* global describe it */
 
 describe("hdkey", function () {
-  describe("+ fromMasterSeed", function () {
+  describe("+ fromSeed", function () {
     for (let f of fixtures.valid) {
       it("should properly derive the chain path: " + f.path, async function () {
-        var hdkey = await DashHd.fromMasterSeed(hexToU8(f.seed));
+        var hdkey = await DashHd.fromSeed(hexToU8(f.seed));
         var childkey = await DashHd.derivePath(hdkey, f.path);
-        let xpriv = await DashHd.getPrivateExtendedKey(childkey);
+        let xpriv = await DashHd.toXPrv(childkey);
 
         assert.equal(xpriv, f.private);
-        assert.equal(await DashHd.getPublicExtendedKey(childkey), f.public);
+        assert.equal(await DashHd.toXPub(childkey), f.public);
       });
 
       describe(
-        "> " + f.path + " get<Private|Public>ExtendedKey() / fromExtendedKey()",
+        "> " + f.path + " get<Private|Public>ExtendedKey() / fromXKey()",
         function () {
           it("should return an object read for JSON serialization", async function () {
-            var hdkey = await DashHd.fromMasterSeed(hexToU8(f.seed));
+            var hdkey = await DashHd.fromSeed(hexToU8(f.seed));
             var childkey = await DashHd.derivePath(hdkey, f.path);
 
             var obj = {
@@ -38,20 +38,14 @@ describe("hdkey", function () {
             };
 
             var childObj = {
-              xpriv: await DashHd.getPrivateExtendedKey(childkey),
-              xpub: await DashHd.getPublicExtendedKey(childkey),
+              xpriv: await DashHd.toXPrv(childkey),
+              xpub: await DashHd.toXPub(childkey),
             };
             assert.deepEqual(childObj, obj);
 
-            var newKey = await DashHd.fromExtendedKey(childObj.xpriv);
-            assert.strictEqual(
-              await DashHd.getPrivateExtendedKey(newKey),
-              f.private,
-            );
-            assert.strictEqual(
-              await DashHd.getPublicExtendedKey(newKey),
-              f.public,
-            );
+            var newKey = await DashHd.fromXKey(childObj.xpriv, { bip32: true });
+            assert.strictEqual(await DashHd.toXPrv(newKey), f.private);
+            assert.strictEqual(await DashHd.toXPub(newKey), f.public);
           });
         },
       );
@@ -106,13 +100,13 @@ describe("hdkey", function () {
   });
   */
 
-  describe("+ fromExtendedKey()", function () {
+  describe("+ fromXKey()", function () {
     describe("> when private", function () {
       it("should parse it", async function () {
         // m/0/2147483647'/1/2147483646'/2
         var key =
           "xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j";
-        var hdkey = await DashHd.fromExtendedKey(key);
+        var hdkey = await DashHd.fromXKey(key, { bip32: true });
         assert.equal(hdkey.versions.private, 0x0488ade4);
         assert.equal(hdkey.versions.public, 0x0488b21e);
         assert.equal(hdkey.depth, 5);
@@ -130,7 +124,7 @@ describe("hdkey", function () {
           u8ToHex(hdkey.publicKey),
           "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
         );
-        let print = await DashHd.fingerprint(hdkey.publicKey);
+        let print = await DashHd._fingerprint(hdkey.publicKey);
         assert.equal(
           print.toString(16),
           "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
@@ -143,7 +137,7 @@ describe("hdkey", function () {
         // m/0/2147483647'/1/2147483646'/2
         var key =
           "xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt";
-        var hdkey = await DashHd.fromExtendedKey(key);
+        var hdkey = await DashHd.fromXKey(key, { bip32: true });
         assert.equal(hdkey.versions.private, 0x0488ade4);
         assert.equal(hdkey.versions.public, 0x0488b21e);
         assert.equal(hdkey.depth, 5);
@@ -158,7 +152,7 @@ describe("hdkey", function () {
           u8ToHex(hdkey.publicKey),
           "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
         );
-        let print = await DashHd.fingerprint(hdkey.publicKey);
+        let print = await DashHd._fingerprint(hdkey.publicKey);
         assert.equal(
           print.toString(16),
           "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
@@ -169,7 +163,7 @@ describe("hdkey", function () {
         // m/0/2147483647'/1/2147483646'/2
         var key =
           "xpub6FnCn6nSzZAw5Tw7cgR9bi15UV96gLZhjDstkXXxvCLsUXBGXPdSnLFbdpq8p9HmGsApME5hQTZ3emM2rnY5agb9rXpVGyy3bdW6EEgAtqt";
-        var hdkey = await DashHd.fromExtendedKey(key, null, false);
+        var hdkey = await DashHd.fromXKey(key, { versions: null, bip32: true });
         assert.equal(hdkey.versions.private, 0x0488ade4);
         assert.equal(hdkey.versions.public, 0x0488b21e);
         assert.equal(hdkey.depth, 5);
@@ -184,7 +178,7 @@ describe("hdkey", function () {
           u8ToHex(hdkey.publicKey),
           "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
         );
-        let print = await DashHd.fingerprint(hdkey.publicKey);
+        let print = await DashHd._fingerprint(hdkey.publicKey);
         assert.equal(
           print.toString(16),
           "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
@@ -197,7 +191,7 @@ describe("hdkey", function () {
     it("should work", async function () {
       var key =
         "xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j";
-      var hdkey = await DashHd.fromExtendedKey(key);
+      var hdkey = await DashHd.fromXKey(key, { bip32: true });
 
       var ma = new Uint8Array(32);
       var mb = new Uint8Array(Buffer.alloc(32, 8));
@@ -233,26 +227,26 @@ describe("hdkey", function () {
     it("should work", async function () {
       var key =
         "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8";
-      var hdkey = await DashHd.fromExtendedKey(key);
+      var hdkey = await DashHd.fromXKey(key, { bip32: true });
 
       var path = "m/3353535/2223/0/99424/4/33";
       var derivedHDKey = await DashHd.derivePath(hdkey, path);
 
       var expected =
         "xpub6JdKdVJtdx6sC3nh87pDvnGhotXuU5Kz6Qy7Piy84vUAwWSYShsUGULE8u6gCivTHgz7cCKJHiXaaMeieB4YnoFVAsNgHHKXJ2mN6jCMbH1";
-      assert.equal(await DashHd.getPublicExtendedKey(derivedHDKey), expected);
+      assert.equal(await DashHd.toXPub(derivedHDKey), expected);
     });
   });
 
   describe("> when private key integer is less than 32 bytes", function () {
     it("should work", async function () {
       var seed = "000102030405060708090a0b0c0d0e0f";
-      var masterKey = await DashHd.fromMasterSeed(hexToU8(seed));
+      var masterKey = await DashHd.fromSeed(hexToU8(seed));
 
       var newKey = await DashHd.derivePath(masterKey, "m/44'/6'/4'");
       var expected =
         "xprv9ymoag6W7cR6KBcJzhCM6qqTrb3rRVVwXKzwNqp1tDWcwierEv3BA9if3ARHMhMPh9u2jNoutcgpUBLMfq3kADDo7LzfoCnhhXMRGX3PXDx";
-      assert.equal(await DashHd.getPrivateExtendedKey(newKey), expected);
+      assert.equal(await DashHd.toXPrv(newKey), expected);
     });
   });
 
@@ -266,7 +260,7 @@ describe("hdkey", function () {
     it("will include leading zeros when hashing to derive child", async function () {
       var key =
         "xprv9s21ZrQH143K3ckY9DgU79uMTJkQRLdbCCVDh81SnxTgPzLLGax6uHeBULTtaEtcAvKjXfT7ZWtHzKjTpujMkUd9dDb8msDeAfnJxrgAYhr";
-      var hdkey = await DashHd.fromExtendedKey(key);
+      var hdkey = await DashHd.fromXKey(key, { bip32: true });
       assert.equal(
         u8ToHex(hdkey.privateKey),
         "00000055378cf5fafb56c711c674143f9b0ee82ab0ba2924f19b64f5ae7cdbfd",
@@ -282,28 +276,22 @@ describe("hdkey", function () {
   describe("> when private key is null", function () {
     it("privateExtendedKey should return null and not throw", async function () {
       var seed = "000102030405060708090a0b0c0d0e0f";
-      var masterKey = await DashHd.fromMasterSeed(hexToU8(seed));
+      var masterKey = await DashHd.fromSeed(hexToU8(seed));
 
-      assert.ok(
-        await DashHd.getPrivateExtendedKey(masterKey),
-        "xpriv is truthy",
-      );
+      assert.ok(await DashHd.toXPrv(masterKey), "xpriv is truthy");
       DashHd.wipePrivateData(masterKey);
 
       assert.doesNotThrow(async function () {
-        await masterKey.getPrivateExtendedKey();
+        await masterKey.toXPrv();
       });
 
-      assert.ok(
-        !(await DashHd.getPrivateExtendedKey(masterKey)),
-        "xpriv is falsy",
-      );
+      assert.ok(!(await DashHd.toXPrv(masterKey)), "xpriv is falsy");
     });
   });
 
   describe(" - when the path given to derive contains only the master extended key", function () {
     it("should return the same hdkey instance", async function () {
-      const hdKeyInstance = await DashHd.fromMasterSeed(
+      const hdKeyInstance = await DashHd.fromSeed(
         hexToU8(fixtures.valid[0].seed),
       );
       assert.equal(await DashHd.derivePath(hdKeyInstance, "m"), hdKeyInstance);
@@ -316,37 +304,31 @@ describe("hdkey", function () {
   describe(" - when the path given to derive does not begin with master extended key", function () {
     it("should throw an error", async function () {
       assert.rejects(async function () {
-        const hdkey = DashHd.create();
-        await DashHd.derivePath(hdkey, "123");
+        await DashHd.derivePath({}, "123");
       }, /Path must start with "m" or "M"/);
     });
   });
 
   describe("- after wipePrivateData()", function () {
     it("should not have private data", async function () {
-      const hdkey = await DashHd.fromMasterSeed(
-        hexToU8(fixtures.valid[6].seed),
-      );
+      const hdkey = await DashHd.fromSeed(hexToU8(fixtures.valid[6].seed));
       DashHd.wipePrivateData(hdkey);
       assert.equal(hdkey.privateKey, null);
-      assert.equal(await DashHd.getPrivateExtendedKey(hdkey), null);
+      assert.equal(await DashHd.toXPrv(hdkey), null);
       assert.rejects(async function () {
         await sign(hdkey, new Uint8Array(32));
       }, "shouldn't be able to sign");
       const childKey = await DashHd.derivePath(hdkey, "m/0");
-      assert.equal(
-        await DashHd.getPublicExtendedKey(childKey),
-        fixtures.valid[7].public,
-      );
+      assert.equal(await DashHd.toXPub(childKey), fixtures.valid[7].public);
       assert.equal(childKey.privateKey, null);
-      assert.equal(await DashHd.getPrivateExtendedKey(childKey), null);
+      assert.equal(await DashHd.toXPrv(childKey), null);
     });
 
     it("should have correct data", async function () {
       // m/0/2147483647'/1/2147483646'/2
       const key =
         "xprvA2nrNbFZABcdryreWet9Ea4LvTJcGsqrMzxHx98MMrotbir7yrKCEXw7nadnHM8Dq38EGfSh6dqA9QWTyefMLEcBYJUuekgW4BYPJcr9E7j";
-      const hdkey = await DashHd.fromExtendedKey(key);
+      const hdkey = await DashHd.fromXKey(key, { bip32: true });
       DashHd.wipePrivateData(hdkey);
       assert.equal(hdkey.versions.private, 0x0488ade4);
       assert.equal(hdkey.versions.public, 0x0488b21e);
@@ -361,7 +343,7 @@ describe("hdkey", function () {
         u8ToHex(hdkey.publicKey),
         "024d902e1a2fc7a8755ab5b694c575fce742c48d9ff192e63df5193e4c7afe1f9c",
       );
-      let print = await DashHd.fingerprint(hdkey.publicKey);
+      let print = await DashHd._fingerprint(hdkey.publicKey);
       assert.equal(
         print.toString(16),
         "26132fdbe7bf89cbc64cf8dafa3f9f88b8666220".slice(0, 8),
@@ -369,13 +351,10 @@ describe("hdkey", function () {
     });
 
     it("should be able to verify signatures", async function () {
-      const fullKey = await DashHd.fromMasterSeed(
-        hexToU8(fixtures.valid[0].seed),
-      );
+      const fullKey = await DashHd.fromSeed(hexToU8(fixtures.valid[0].seed));
       // using get/from methods to clone before mutating
-      const wipedKey = await DashHd.fromExtendedKey(
-        await DashHd.getPrivateExtendedKey(fullKey),
-      );
+      const xprv = await DashHd.toXPrv(fullKey);
+      const wipedKey = await DashHd.fromXKey(xprv, { bip32: true });
       DashHd.wipePrivateData(wipedKey);
 
       const hash = new Uint8Array(Buffer.alloc(32, 8));
@@ -384,18 +363,19 @@ describe("hdkey", function () {
     });
 
     it("should not throw if called on hdkey without private data", async function () {
-      const hdkey = await DashHd.fromExtendedKey(fixtures.valid[0].public);
+      const hdkey = await DashHd.fromXKey(fixtures.valid[0].public, {
+        bip32: true,
+      });
       assert.doesNotThrow(() => DashHd.wipePrivateData(hdkey));
-      assert.equal(
-        await DashHd.getPublicExtendedKey(hdkey),
-        fixtures.valid[0].public,
-      );
+      assert.equal(await DashHd.toXPub(hdkey), fixtures.valid[0].public);
     });
   });
 
   describe("Deriving a child key does not mutate the internal state", function () {
     it("should not mutate it when deriving with a private key", async function () {
-      const hdkey = await DashHd.fromExtendedKey(fixtures.valid[0].private);
+      const hdkey = await DashHd.fromXKey(fixtures.valid[0].private, {
+        bip32: true,
+      });
       const path = "m/123";
       const privateKeyBefore = u8ToHex(hdkey.privateKey);
 
@@ -419,7 +399,9 @@ describe("hdkey", function () {
     });
 
     it("should not mutate it when deriving without a private key", async function () {
-      const hdkey = await DashHd.fromExtendedKey(fixtures.valid[0].private);
+      const hdkey = await DashHd.fromXKey(fixtures.valid[0].private, {
+        bip32: true,
+      });
       const path = "m/123/123/123";
       DashHd.wipePrivateData(hdkey);
 
