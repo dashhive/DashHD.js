@@ -31,17 +31,17 @@
   },
   "homepage": "https://github.com/dashive/dashhd.js",
   "files": [
-      "dashhd.js",
-      "jsconfig.json"
+    "dashhd.js",
+    "jsconfig.json"
   ],
   "devDependencies": {
     "@dashincubator/secp256k1": "^1.7.1-4",
-    "dashphrase": "^1.3.1-0",
+    "dashphrase": "^1.3.1",
     "mocha": "^10.2.0",
     "mocha-lcov-reporter": "0.0.1"
   },
   "dependencies": {
-    "dashkeys": "^0.9.2-1"
+    "dashkeys": "^1.0.0"
   },
   "scripts": {
     "lint": "npx -p typescript@4.x -- tsc -p ./jsconfig.json",
