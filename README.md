@@ -55,7 +55,7 @@ HD Wallet Seed:  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a1
 - [Install](#install)
   - Node, Bun, & Bundlers
   - Browser
-- [Usage Overview](#usage-overwiew)
+- [Usage Overview](#usage-overview)
 - [**Production-Ready** QuickStart](#production-quickstart)
 - [API](#api)
   - Note on derivation exceptions
@@ -111,10 +111,14 @@ let DashPhrase = window.DashPhrase;
 
 # Usage Overview
 
+**Already know** what you're doing?
+
+**Clueless?** Go to the _QuickStart_ or _Tutorial_ section.
+
 1. Generate a _Wallet_
 
    ```js
-   let wallet = await DashHd.fromSeed(seedBytes);
+   let walletKey = await DashHd.fromSeed(seedBytes);
    ```
 
    - As a one-off, you can **directly** generate an _Address Key_ by _HD Path_
@@ -130,21 +134,23 @@ let DashPhrase = window.DashPhrase;
 2. Generate an _Account_
    ```js
    let accountIndex = 0;
-   let account = await wallet.deriveAccount(accountIndex);
+   let accountKey = await walletKey.deriveAccount(accountIndex);
    ```
-3. Generate an _X Key_ (Extended Private or Public Key)
+3. Generate an _XPrv_ or _XPub_ _X Key_ (Extended Private or Public Key)
    ```js
+   // generally used for as a 'receive' address (as opposed to 'change' address)
    let use = DashHd.RECEIVE;
-   let xkey = await account.deriveXKey(use);
+   let xprvKey = await accountKey.deriveXKey(use);
    ```
 4. (Optional) Generate _XPrv_ and _XPubs_
    ```js
-   let xprv = DashHd.toXPrv(xkey);
-   let xpub = DashHd.toXPub(xkey);
+   let xprv = await DashHd.toXPrv(xprvKey);
+   let xpub = await DashHd.toXPub(xprvKey);
    ```
 5. Generate an _Address Key_
    ```js
-   let key = await xkey.deriveAddress(use);
+   let index = 0;
+   let addressKey = await xprvKey.deriveAddress(index);
    ```
 6. Generate _WIF_ & _Address_
    ```js
@@ -171,15 +177,15 @@ However, production code will look more like this:
 
    ```js
    let accountIndex = 0;
-   let xkey;
+   let xprvKey;
 
    try {
-     let wallet = await DashHd.fromSeed(seedBytes); // seed from step 1
+     let walletKey = await DashHd.fromSeed(seedBytes); // from step 1
 
-     let account = await wallet.deriveAccount(accountIndex);
+     let accountKey = await walletKey.deriveAccount(accountIndex);
 
-     void (await account.deriveXKey(DashHd.CHANGE));
-     xkey = await account.deriveXKey(DashHd.RECEIVE);
+     void (await accountKey.deriveXKey(DashHd.CHANGE));
+     xprvKey = await accountKey.deriveXKey(DashHd.RECEIVE);
    } catch (e) {
      window.alert("Error: The passphrase can't generate a valid 1st account!");
    }
@@ -198,15 +204,16 @@ However, production code will look more like this:
    for (let i = previousIndex; i < last; i += 1) {
      let key;
      try {
-       key = await xkey.deriveAddress(i); // xkey from step 2
+       key = await xprvKey.deriveAddress(i); // xprvKey from step 2
      } catch (e) {
+       // to make up for skipping on error
        last += 1;
        continue;
      }
 
      let wif = await DashHd.toWif(key.privateKey);
      let address = await DashHd.toAddr(key.publicKey);
-     let hdpath = `m/44'/5'/${accountIndex}'/${use}/${i}`;
+     let hdpath = `m/44'/5'/${accountIndex}'/${use}/${i}`; // accountIndex from step 2
      keys.push({
        index: i,
        hdpath: hdpath, // useful for multi-account indexing
@@ -232,8 +239,8 @@ However, production code will look more like this:
   async fromXKey(xprv||xpub, opts)  // depth-4 hdkey (XKey)
   async toWif(privBytes, opts)
   async toAddr(pubBytes, opts)
-  async toXPrv(xkey, opts)
-  async toXPub(xkey, opts)
+  async toXPrv(xprvKey, opts)
+  async toXPub(xKey, opts)
   ```
 - DashHd (BIP-32)
   ```js
@@ -242,7 +249,7 @@ However, production code will look more like this:
           hdkey,
           hdpath,
         )
-  async deriveChild(
+  async deriveChild(                 // (mostly for debugging)
           hdkey,
           index,
           isHardened,
@@ -250,15 +257,15 @@ However, production code will look more like this:
   ```
 - HD Key Types
   ```js
-  Wallet
+  Wallet Key
     async deriveAccount(accountIndex)
-  Account
+  Account Key
     async deriveXKey(use = 0)
-  XKey
+  X (Extended) Key
     async deriveAddress(keyIndex)
-  Key
+  Address Key
     { privateKey, publicKey }
-  HDKey
+  HD Key (Base Type)
     { versions, depth, parentFingerprint,
       index, chainCode, privateKey, publicKey }
   ```
@@ -304,13 +311,13 @@ address re-use, a privacy concern), we do not.
 
 ## `DashHd`
 
-This is the top-level export, and these methods are specific for the BIP-44 use
-case of HD Keys for:
+This is the top-level export, and these methods are specific to the (modern &
+current) BIP-44 standard for HD Keys for:
 
-- Wallet
-- Account
-- XKey (XPrv or XPub)
-- Key (WIF or Address)
+- Wallet Key
+- Account Key
+- X (Extended) Key (XPrv or XPub)
+- Address Key (WIF or Address)
 
 ### Constants
 
@@ -355,11 +362,11 @@ with a default HD Path prefix of `m/44'/5'`.
 ```js
 let words = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong";
 let secret = "TREZOR";
-let seed = await DashPhrase.toSeed(words, secret);
+let seedBytes = await DashPhrase.toSeed(words, secret);
 ```
 
 ```js
-let wallet = await DashHd.fromSeed(seedBytes, options);
+let walletKey = await DashHd.fromSeed(seedBytes, options);
 // { deriveAccount,
 //   versions,
 //   depth: 0, parentFingerprint: 0, index: 0,
@@ -390,7 +397,7 @@ let xprv =
 ```
 
 ```js
-let xkey = await DashHd.fromXKey(xkeyString, options);
+let xkey = await DashHd.fromXKey(xprvOrXPub, options);
 // { deriveAddress,
 //   versions: v, depth: n, parentFingerprint: p, index: 0,
 //   chainCode: c, privateKey: privOrNull, publicKey: pubBytes }
@@ -409,11 +416,11 @@ let xkey = await DashHd.fromXKey(xkeyString, options);
 ### `toWif(privBytes, opts)`
 
 Wrapper around `DashKeys.encodeKey(keyBytes, options)` to Base58Check-encode a
-Private Key as in _Wallet Import Format_.
+Private Key as in _WIF_ (_Wallet Import Format_).
 
 ```js
 let addressIndex = 0;
-let key = await xkey.deriveAddress(addressIndex);
+let key = await xprvKey.deriveAddress(addressIndex);
 ```
 
 ```js
@@ -425,7 +432,7 @@ let wif = await DashHd.toWif(key.privateKey);
 
 ```json5
 {
-  version: "cc",
+  version: "cc", // (default) mainnet DASH Private Key
 }
 ```
 
@@ -436,11 +443,11 @@ Public Key as an _Address_.
 
 ```js
 let addressIndex = 0;
-let key = await xkey.deriveAddress(addressIndex);
+let addressKey = await xkey.deriveAddress(addressIndex);
 ```
 
 ```js
-let wif = await DashHd.toAddr(key.publicKey);
+let addr = await DashHd.toAddr(key.publicKey);
 // "XrZJJfEKRNobcuwWKTD3bDu8ou7XSWPbc9"
 ```
 
@@ -448,45 +455,84 @@ let wif = await DashHd.toAddr(key.publicKey);
 
 ```json5
 {
-  version: "4c", // (default) DASH PubKeyHash
+  version: "4c", // (default) mainnet DASH PubKeyHash
 }
 ```
 
 ### `toXPrv(hdkey)`
 
+Encode an _HD Key_ to **eXtended Private Key** format. \
+(Base58Check with `xprv` magic version bytes)
+
 Wrapper around `DashKeys.encodeKey(keyBytes, options)` to Base58Check-encode an
 _X Key_ as an _XPrv_.
 
-```js
-let use = DashHd.RECEIVE;
-let xkey = await account.deriveXKey(use);
+1. Get your XKey (XPrv Key) by one of
 
-// Or...
-let xkey = await DashHd.fromXKey(xprv);
-```
+   - Derive via HD Path directly from a Wallet Key
 
-```js
-let xprv = await DashHd.toXPrv(xkey);
-// "xprvA2L7qar7dyJNhxnE47gK5J6cc1oEHQuAk8WrZLnLeHTtnkeyP4w6Eo6Tt65trtdkTRtx8opazGnLbpWrkhzNaL6ZsgG3sQmc2yS8AxoMjfZ"
-```
+   ```js
+   // `m/${purpose}'/${coinType}'/${accountIndex}'/${use}`
+   let hdpath = `m/44'/5'/0'/0`;
+   let xprvKey = await DashHd.derivePath(walletKey, hdpath);
+   ```
 
-### `toXPrv(hdkey)`
+   - Derived from Account Key
+
+   ```js
+   let use = DashHd.RECEIVE;
+   let xprvKey = await accountKey.deriveXKey(use);
+   ```
+
+   - Decode an Extended Private Key (`xprv`)
+
+   ```js
+   let xprvKey = await DashHd.fromXKey(xprv);
+   ```
+
+2. Encode to Base58Check `xprv`
+   ```js
+   let xprv = await DashHd.toXPrv(xprvKey);
+   // "xprvA2L7qar7dyJNhxnE47gK5J6cc1oEHQuAk8WrZLnLeHTtnkeyP4w6Eo6Tt65trtdkTRtx8opazGnLbpWrkhzNaL6ZsgG3sQmc2yS8AxoMjfZ"
+   ```
+
+### `toXPub(hdkey)`
+
+Encode an _HD Key_ to **eXtended Public Key** format. \
+(Base58Check with `xprv` magic version bytes)
 
 Wrapper around `DashKeys.encodeKey(keyBytes, options)` to Base58Check-encode an
 _X Key_ as an _XPub_.
 
-```js
-let use = DashHd.RECEIVE;
-let xkey = await account.deriveXKey(use);
+1. Get your XKey (XPub Key) by one of
 
-// Or...
-let xkey = await DashHd.fromXKey(xpub);
-```
+   - Derive via HD Path directly from a Wallet Key
 
-```js
-let xpub = await DashHd.toXPub(xkey);
-// "xpub6FKUF6P1ULrfvSrhA9DKSS3MA3digsd27MSTMjBxCczsfYz7vcFLnbQwjP9CsAfEJsnD4UwtbU43iZaibv4vnzQNZmQAVcufN4r3pva8kTz"
-```
+   ```js
+   // `m/${purpose}'/${coinType}'/${accountIndex}'/${use}`
+   let hdpath = `m/44'/5'/0'/0`;
+   let xprvKey = await DashHd.derivePath(walletKey, hdpath);
+   ```
+
+   - Derived from Account Key
+
+   ```js
+   let use = DashHd.RECEIVE;
+   let xprvKey = await accountKey.deriveXKey(use);
+   ```
+
+   - Decode an Extended Private Key (`xprv`)
+
+   ```js
+   let xpubKey = await DashHd.fromXKey(xprvOrXPub);
+   ```
+
+2. Encode to Base58Check `xprv`
+
+   ```js
+   let xpub = await DashHd.toXPub(xprvKeyOrXPubKey);
+   // "xpub6FKUF6P1ULrfvSrhA9DKSS3MA3digsd27MSTMjBxCczsfYz7vcFLnbQwjP9CsAfEJsnD4UwtbU43iZaibv4vnzQNZmQAVcufN4r3pva8kTz"
+   ```
 
 ## `DashHd` (BIP-32)
 
@@ -530,7 +576,7 @@ let hdkey = DashHd.create({
 Derives one additional depth of an HD Key, by index value and hardness.
 
 ```js
-let hdkey = DashHd.fromXKey(xpub, { bip32: true });
+let hdkey = await DashHd.fromXKey(xpub, { bip32: true });
 ```
 
 ```js
@@ -548,11 +594,11 @@ Can derive any valid BIP-32 path, at any depth. \
 (even if nonsensical - such as a hardened key after an unhardened one)
 
 ```js
-let hdkey = DashHd.fromSeed(seedBytes);
+let hdkey = await DashHd.fromSeed(seedBytes);
 ```
 
 ```js
-let childKey = DashHd.derivePath(hdkey, `m/0'/0/1'/1/0`);
+let childKey = await DashHd.derivePath(hdkey, `m/0'/0/1'/1/0`);
 // { versions, depth, parentFingerprint,
 //   index, chainCode, privateKey, publicKey }
 ```
@@ -575,43 +621,44 @@ childKey = await DashHd.deriveChild(childKey, 0, false);
 A BIP-44 _HD Path_ has 5 depths, each with their own HD Key Type:
 
 ```js
-//0         1        2          3       4        5
+//0         1        2           3      4        5
 `m/${purpose}'/${coin}'/${account}'/${use}/${index}`;
+//m        44'       5'          a'    0|1       i
 ```
 
 - Depth 0: _Wallet (Root) Key_ - calculated from a Seed
 - Depth 1: _Purpose Key_ - predefined as index `44'` for BIP-44
-- Depth 2: _Coin Key_ - predefined as index `5'` for DASH \
+- Depth 2: _Coin Key_ - predefined as index `5'` for DASH (main & test) \
   (this is also sometimes referred to as the "Wallet")
 - Depth 3: _Account Key_ - derived by account index
 - Depth 4: _X Key_ is for sharing, derived by Use (Receiving or Change)
-- Depth 5: _Key_ is for paying and getting paid (WIF or Address)
+- Depth 5: _Address Key_ is for paying and getting paid (WIF or Address)
 - Depth 6+: not defined by _BIP-44_, application specific
 
 Keys can be derived
 
-- by instance (recommended):
+- by instance (recommended: faster, maintains state):
 
   ```js
-  let wallet = await DashHd.fromSeed(seedBytes);
+  let walletKey = await DashHd.fromSeed(seedBytes);
 
   let accountIndex = 0;
-  let account = await wallet.deriveAccount(accountIndex);
+  let accountKey = await walletKey.deriveAccount(accountIndex);
 
   let use = DashHD.RECEIVE;
-  let xkey = await account.deriveXKey(use);
+  let xkey = await accountKey.deriveXKey(use);
 
   let addressIndex = 0;
   let key = await xkey.deriveAddress(addressIndex);
   ```
 
-- by path (not for loops):
+- by path (slow if used in for loops):
 
   ```js
-  let wallet = await DashHd.fromSeed(seedBytes);
+  let walletKey = await DashHd.fromSeed(seedBytes);
 
   let hdpath = `m/${purpose}'/${coin}'/${account}'/${use}/${index}`;
-  let key = await DashHd.derivePath(wallet, hdpath);
+  let key = await DashHd.derivePath(walletKey, hdpath);
   ```
 
 The benefit of deriving _by instance_ is that when you need to derive in a loop,
@@ -624,7 +671,7 @@ loop at the lowest level that you can. For example:
 
 ```js
 // ...
-let xkey = await account.deriveXKey(use);
+let xkey = await accountKey.deriveXKey(use);
 
 for (let addressIndex = 0; addressIndex < 100; addressIndex += 1) {
   let key = await xkey.deriveAddress(addressIndex);
@@ -643,22 +690,32 @@ From a Seed:
 ```js
 let words = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong";
 let secret = "TREZOR";
-let seed = await DashPhrase.toSeed(words, secret);
+let seedBytes = await DashPhrase.toSeed(words, secret);
 
-let wallet = await DashHd.fromSeed(seed, {});
+let walletKey = await DashHd.fromSeed(seedBytes, {});
 ```
 
 To a different Coin Type or non-BIP-44 scheme:
 
 ```js
-let purpose = 44;
-let coinType = 0;
+let purpose = 44; // depth 1 is always 44 for DASH
+let coinType = 0; // depth 2 is always 0 for DASH
 let accountIndex = 0;
-let account = await DashHd.derivePath(
-  wallet,
+let accountKey = await DashHd.derivePath(
+  walletKey,
   `m/${purpose}'/${coinType}'/${accountIndex}'`,
 );
 ```
+
+### Purpose (depth 1)
+
+Always `44'`, as in BIP-44 for DASH (and most other cryptocurrencies)
+
+### Purpose (depth 3)
+
+Always `5'`, which is a magic number specifying DASH (mainnet and testnet)
+
+(can be used with other
 
 ### Account (depth 3)
 
@@ -668,31 +725,34 @@ From a Wallet:
 
 ```js
 let accountIndex = 0;
-let account = wallet.deriveAccount(accountIndex);
+let accountKey = walletKey.deriveAccount(accountIndex);
 
 let use = DashHd.RECEIVE;
-let xkey = await account.deriveXKey(use);
+let xkey = await accountKey.deriveXKey(use);
 ```
 
 From an HD Path:
 
 ```js
 let accountIndex = 0;
-let account = await DashHd.derivePath(wallet, `m/44'/5'/${accountIndex}'`);
+let accountKey = await DashHd.derivePath(
+  walletKey,
+  `m/44'/5'/${accountIndex}'`,
+);
 
 let use = DashHd.RECEIVE;
-let xkey = await account.deriveXKey(use);
+let xkey = await accountKey.deriveXKey(use);
 ```
 
-### XKey (depth 4)
+### XKey (XPrv or XPub) (depth 4)
 
-An non-hardened HD Key with a `deriveAddress(addressIndex)` method.
+An HD Key with a `deriveAddress(addressIndex)` method.
 
-Represents a non-hardened XPrv or XPub.
+Represents a "public" (i.e. non-hardened) XPrv or XPub.
 
 Share an XPub with a contact so that they can derive additional addresses to pay
 you repeatedly without sacrificing privacy, and without needing interaction from
-you to creat ea new address each time.
+you to creat a new address each time.
 
 Share an XPrv with an application so that you can load the XPub side and it can
 use the XPrv side to make payments on your behalf.
@@ -701,7 +761,7 @@ From an Account:
 
 ```js
 let use = DashHd.RECEIVE;
-let xkey = await account.deriveXKey(use);
+let xkey = await accountKey.deriveXKey(use);
 
 let addressIndex = 0;
 let key = await xkey.deriveAddress(addressIndex);
@@ -712,7 +772,7 @@ let key = await xkey.deriveAddress(addressIndex);
 From an `xprv`:
 
 ```js
-let xkey = await account.fromXKey(xprv);
+let xkey = await accountKey.fromXKey(xprv);
 
 let addressIndex = 0;
 let key = await xkey.deriveAddress(addressIndex);
@@ -723,7 +783,7 @@ let key = await xkey.deriveAddress(addressIndex);
 From an `xpub`:
 
 ```js
-let xkey = await account.fromXKey(xprv);
+let xkey = await accountKey.fromXKey(xprv);
 
 let addressIndex = 0;
 let key = await xkey.deriveAddress(addressIndex);
@@ -735,7 +795,7 @@ let key = await xkey.deriveAddress(addressIndex);
 
 The base _HD Key_ type, but with no additional methods.
 
-A fully-derived BIP-44 Address (non-hardened).
+A fully-derived BIP-44 Address ("public" a.k.a. non-hardened).
 
 ```json5
 { ...,
@@ -746,10 +806,10 @@ From a Wallet:
 
 ```js
 let accountIndex = 0;
-let account = await wallet.deriveAccount(accountIndex);
+let accountKey = await walletKey.deriveAccount(accountIndex);
 
 let use = DashHd.RECEIVE;
-let xkey = await account.deriveXKey(use);
+let xkey = await accountKey.deriveXKey(use);
 
 let addressIndex = 0;
 let key = await xkey.deriveAddress(addressIndex);
@@ -758,7 +818,7 @@ let key = await xkey.deriveAddress(addressIndex);
 From an XPrv:
 
 ```js
-let xkey = await account.fromXKey(xprv);
+let xkey = await accountKey.fromXKey(xprv);
 
 let addressIndex = 0;
 let key = await xkey.deriveAddress(addressIndex);
@@ -769,7 +829,7 @@ let key = await xkey.deriveAddress(addressIndex);
 From an XPub:
 
 ```js
-let xkey = await account.fromXKey(xpub);
+let xkey = await accountKey.fromXKey(xpub);
 
 let addressIndex = 0;
 let key = await xkey.deriveAddress(addressIndex);
@@ -828,7 +888,7 @@ From a code perspective:
    let secretSalt = "TREZOR";
    ```
 4. _Key Expansion_ derives the _Seed_ from the _Passphrase_ + _Secret_ \
-   (it's a specific configuration of PBKDF2 under the hood)
+   (FYI: it's a specific configuration of PBKDF2 under the hood)
    ```js
    let seedBytes = await DashPhrase.toSeed(wordList, secretSalt);
    ```
@@ -852,9 +912,9 @@ nonetheless.
 1. Generate a _Wallet_ Key \
    (uses an HMAC-style Key Expansion, defined in BIP-32 )
    ```js
-   let wallet;
+   let walletKey;
    try {
-     wallet = await DashHd.fromSeed(seed);
+     walletKey = await DashHd.fromSeed(seedBytes);
    } catch (e) {
      window.alert("the passphrass (or seed) could not be used to derive keys");
    }
@@ -865,10 +925,10 @@ nonetheless.
 
 As a **one-off**, HD Path Derivation can be very convenient:
 
-Note: this approach would **5x slower** for deriving multiple keys because each
-key will derive from the Root Wallet Key each time.
+Note: this approach would be **5x slower** for deriving multiple keys because
+each key will derive from the Root Wallet Key each time.
 
-1. Define the target HD Path indexes to Depth 4 (_Use_ / _X Key_)
+1. Define the target HD Path indexes to Depth 4 (_Use_ a.k.a. _X Key_)
    ```js
    let accountIndex = 0;
    let use = DashHd.RECEIVE;
@@ -883,7 +943,7 @@ key will derive from the Root Wallet Key each time.
    for (let i = addressIndex; i < maxTries; i += 1) {
      try {
        let hdpath = `${hdPartial}/${addressIndex}`;
-       key = DashHd.derivePath(wallet, hdpath); // as defined above
+       key = await DashHd.derivePath(wallet, hdpath); // as defined above
        break;
      } catch (e) {
        // ignore
@@ -913,15 +973,15 @@ generate **multiple addresses** as part of your application's lifecycle.
 
    ```js
    let accountIndex = 0;
-   let account;
+   let accountKey;
 
    let use = DashHd.RECEIVE; // 0 = receive, 1 = change
    let xkey;
 
-   while (!account) {
+   while (!accountKey) {
      try {
-       account = await wallet.deriveAccount(accountIndex);
-       xkey = await account.deriveXKey(use);
+       accountKey = await walletKey.deriveAccount(accountIndex);
+       xkey = await accountKey.deriveXKey(use);
        break;
      } catch (e) {
        accountIndex += 1;
@@ -1124,8 +1184,8 @@ See more at [API: Key Types](#key-types) (code above) and [HD Path](#hd-path).
 
 ## HD Passphrase Mnemonic
 
-Also: _Mnemonic for Generating Hierarchical Deterministic Keys_, _HD Wallet_,
-_BIP-39_
+Also: _Recovery Phrase_, _Mnemonic for Generating Hierarchical Deterministic
+Keys_, _HD Wallet_, _BIP-39_
 
 12 words used to derive an HD Seed. \
 (11¾ for entropy, ¼ for checksum)
@@ -1141,10 +1201,10 @@ See [DashPhrase.js](dash-phrase).
 
 The path that defines an HD Key - typically of the BIP-44 variety:
 
-- a _Root_, ex: `m` (depth 0, the wallet, straight from the seed)
-- an _Coin Key_, ex: `m/44'/5'` (depth 2, sometimes called Wallet)
+- a _Root_, ex: `m` (depth 0, the Wallet Key, straight from the seed)
+- an _Coin Key_, ex: `m/44'/5'` (depth 2)
 - an _Account_, ex: `m/44'/5'/0'` (depth 3)
-- an _X Key_, ex: `m/44'/5'/0'/0` (depth 4, also the Use)
+- an _X Key_ (_XPrv_ or _XPub_), ex: `m/44'/5'/0'/0` (depth 4, a.k.a. _Use_)
 - an _Address Key_, ex: `m/44'/5'/0'/0/0` (depth 5, the end)
 
 In general:
