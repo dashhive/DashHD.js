@@ -92,7 +92,7 @@ npm install --save dashphrase
 ```
 
 ```js
-let DashHd = require("dashd");
+let DashHd = require("dashhd");
 let DashPhrase = require("dashphrase");
 ```
 
