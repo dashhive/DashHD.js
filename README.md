@@ -715,9 +715,13 @@ Always `44'`, as in BIP-44 for DASH (and most other cryptocurrencies)
 
 ### Purpose (depth 3)
 
-Always `5'`, which is a magic number specifying DASH (`1'` for testnet)
+Always `5'`, which is a magic number specifying DASH.
 
-(can be used with other
+Except `1'` for testnet, as per
+https://github.com/satoshilabs/slips/blob/master/slip-0044.md.
+
+See `fromSeed(seedBytes)` for options to change `purpose`, `coinType`, and
+`versions`.
 
 ### Account (depth 3)
 
