@@ -187,7 +187,9 @@ However, production code will look more like this:
      void (await accountKey.deriveXKey(DashHd.CHANGE));
      xprvKey = await accountKey.deriveXKey(DashHd.RECEIVE);
    } catch (e) {
-     window.alert("Error: The recovery phrase can't generate a valid 1st account!");
+     window.alert(
+       "Error: The recovery phrase can't generate a valid 1st account!",
+     );
    }
    ```
 
@@ -628,7 +630,7 @@ A BIP-44 _HD Path_ has 5 depths, each with their own HD Key Type:
 
 - Depth 0: _Wallet (Root) Key_ - calculated from a Seed
 - Depth 1: _Purpose Key_ - predefined as index `44'` for BIP-44
-- Depth 2: _Coin Key_ - predefined as index `5'` for DASH (main & test) \
+- Depth 2: _Coin Key_ - predefined as index `5'` for DASH (`1'` for testnet) \
   (this is also sometimes referred to as the "Wallet")
 - Depth 3: _Account Key_ - derived by account index
 - Depth 4: _X Key_ is for sharing, derived by Use (Receiving or Change)
@@ -713,7 +715,7 @@ Always `44'`, as in BIP-44 for DASH (and most other cryptocurrencies)
 
 ### Purpose (depth 3)
 
-Always `5'`, which is a magic number specifying DASH (mainnet and testnet)
+Always `5'`, which is a magic number specifying DASH (`1'` for testnet)
 
 (can be used with other
 
@@ -916,7 +918,9 @@ nonetheless.
    try {
      walletKey = await DashHd.fromSeed(seedBytes);
    } catch (e) {
-     window.alert("the recovery phrase (or seed) could not be used to derive keys");
+     window.alert(
+       "the recovery phrase (or seed) could not be used to derive keys",
+     );
    }
    ```
 2. Notify the user and retry a different Recovery Phrase on failure.
