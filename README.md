@@ -62,7 +62,7 @@ HD Wallet Seed:  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a1
   - DashHd derivations & encodings
   - HD Key Types
 - [Tutorial Walkthrough](#walkthrough)
-  - Passphrase, Secret, Seed
+  - Recovery Phrase, Secret, Seed
   - Wallet Derivation
     - HD Path Derivation
     - _Wallet_, _Account_, and _X Key_ Derivation
@@ -162,7 +162,7 @@ let DashPhrase = window.DashPhrase;
 
 However, production code will look more like this:
 
-1. Get a _Seed_ from the user's _Passphrase Mnemonic_ and _Secret Salt_
+1. Get a _Seed_ from the user's _Recovery Phrase_ and _Secret Salt_
 
    ```js
    let wordList = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong";
@@ -173,7 +173,7 @@ However, production code will look more like this:
    ```
 
 2. Derive a _Wallet_, _Account_, and _X Key_, if possible. \
-    (reject the _Passphrase_ or _Seed_ if _Account_ index 0 is not valid)
+    (reject the _Recovery Phrase_ or _Seed_ if _Account_ index 0 is not valid)
 
    ```js
    let accountIndex = 0;
@@ -187,7 +187,7 @@ However, production code will look more like this:
      void (await accountKey.deriveXKey(DashHd.CHANGE));
      xprvKey = await accountKey.deriveXKey(DashHd.RECEIVE);
    } catch (e) {
-     window.alert("Error: The passphrase can't generate a valid 1st account!");
+     window.alert("Error: The recovery phrase can't generate a valid 1st account!");
    }
    ```
 
@@ -862,16 +862,16 @@ than the root).
 This will focus on the **most typical** use case, where you intend to generate
 **multiple addresses** as part of your application's lifecycle.
 
-## Part 1: Passphrase, Secret, Seed
+## Part 1: Recovery Phrase, Secret, Seed
 
-The Passphrase (or Seed), **is** the Wallet.
+The Recovery Phrase (or Seed), **is** the Wallet.
 
 - A _Wallet_ is derived from a _Seed_.
-- A _Seed_ is typically derived from a _Passphrase Mnemonic_ and _Secret Salt_.
+- A _Seed_ is typically derived from a _Recovery Phrase_ and _Secret Salt_.
 
 From a code perspective:
 
-1. If your user doesn't supply a _Passphrase Mnemonic_, you can generate one:
+1. If your user doesn't supply a _Recovery Phrase_, you can generate one:
    ```js
    let targetBitEntropy = 128;
    let wordList = await DashPhrase.generate(targetBitEntropy);
@@ -887,18 +887,18 @@ From a code perspective:
    let wordList = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong";
    let secretSalt = "TREZOR";
    ```
-4. _Key Expansion_ derives the _Seed_ from the _Passphrase_ + _Secret_ \
+4. _Key Expansion_ derives the _Seed_ from the _Recovery Phrase_ + _Secret_ \
    (FYI: it's a specific configuration of PBKDF2 under the hood)
    ```js
    let seedBytes = await DashPhrase.toSeed(wordList, secretSalt);
    ```
 
-Prompt the user **to make a backup** of their _Passphrase_. \
-(or their _Seed_, if you're not implementing *Passphrase*s)
+Prompt the user **to make a backup** of their _Recovery Phrase_. \
+(or their _Seed_, if you're not implementing *Recovery Phrase*s)
 
 It's common to print this out and put it in a safe.
 
-If the **_Passphrase_ is lost**, the Wallet (and all money) is
+If the **_Recovery Phrase_ is lost**, the Wallet (and all money) is
 **unrecoverable**.
 
 ## Part 2: The Wallet Derivation
@@ -916,10 +916,10 @@ nonetheless.
    try {
      walletKey = await DashHd.fromSeed(seedBytes);
    } catch (e) {
-     window.alert("the passphrass (or seed) could not be used to derive keys");
+     window.alert("the recovery phrase (or seed) could not be used to derive keys");
    }
    ```
-2. Notify the user and retry a different Passphrase on failure.
+2. Notify the user and retry a different Recovery Phrase on failure.
 
 ### Part 2a: HD Path Derivation
 
@@ -1044,7 +1044,7 @@ See also [Dash Tools Glossary](https://github.com/dashhive/dash-tools#glossary).
 - [HD Account](#hd-account)
 - [HD Address Key](#hd-address-key)
 - [HD Keys](#hd-keys)
-- [HD Passphrase Mnemonic](#hd-passphrase-mnemonic)
+- [HD Recovery Phrase](#hd-recovery-phrase)
 - [HD Path](#hd-path)
 - [HD Wallet](#hd-wallet)
 - [HD X Key](#hd-x-key)
@@ -1068,7 +1068,7 @@ If you use 2048 words, each word represents 11 _bits_. \
 12 words represent 131 _bits_ of information. \
 Any extra bits are used for checksumming the data. \
 
-See [_HD Passphrase Mnemonic_](#hd-passphrase-mnemonic).
+See [_HD Recovery Phrase_](#hd-recovery-phrase).
 
 ## Base58Check
 
@@ -1098,7 +1098,7 @@ See [_HD Keys_](#hd-keys).
 
 Also: Base2048, _BIP39_, _BIP-0039_
 
-BIP for [_HD Passphrase Mnemonic_](#hd-passphrase-mnemonic).
+BIP for [_HD Recovery Phrase_](#hd-recovery-phrase).
 
 ## BIP-43
 
@@ -1150,7 +1150,7 @@ Usually intentionally slow. \
 May run a high number of "Rounds" in succession. \
 (typically hundreds or thousands).
 
-_Passhrase Mnemonics_ to _Seed_ (BIP-39) uses _PBKDF2_. \
+_Recovery Phrase_ to _Seed_ (BIP-39) uses _PBKDF2_. \
 _HD Keys_ (BIP-44) use HMAC and *Secp256k1 Tweak*ing for each index.
 
 See also:
@@ -1182,7 +1182,7 @@ Any of generic or purpose-specific keys derived deterministically form a seed.
 
 See more at [API: Key Types](#key-types) (code above) and [HD Path](#hd-path).
 
-## HD Passphrase Mnemonic
+## HD Recovery Phrase
 
 Also: _Recovery Phrase_, _Mnemonic for Generating Hierarchical Deterministic
 Keys_, _HD Wallet_, _BIP-39_
@@ -1250,7 +1250,7 @@ Also: Master Seed, Seed, HD Seed
 Either:
 
 - 64 random bytes
-- a 64-byte hash derived from a _Passphrase Mnemonic_
+- a 64-byte hash derived from a _Recovery Phrase_
 
 **Cannot be reversed**.
 
@@ -1335,9 +1335,9 @@ ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a
 ## Zoomonic
 
 ```txt
-Passphrase (Mnemonic)  :  zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong
-Secret (Salt Password) :  TREZOR
-Seed                   :  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
+Recovery Phrase (Mnemonic) :  zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong
+Secret (Salt Password)     :  TREZOR
+Seed                       :  ac27495480225222079d7be181583751e86f571027b0497b5b5d11218e0a8a13332572917f0f8e5a589620c6f15b11c61dee327651a14c34e18231052e48c069
 ```
 
 # References
