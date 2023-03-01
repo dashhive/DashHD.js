@@ -3,14 +3,9 @@
 
 let Fs = require("node:fs/promises");
 
-let HdKey = require("hdkey");
+let DashHd = require("dashhd");
 
-let Base58Check = require("@dashincubator/base58check").Base58Check;
-let b58c = Base58Check.create();
-
-let Xaddr = require("./_xaddr.js");
-
-let coinType = 5; // TODO testnet?
+let coinType = 5;
 
 async function main() {
   let args = process.argv.slice(2);
@@ -57,7 +52,7 @@ async function main() {
   let seedHex = txt.trim();
   let seedBuf = Buffer.from(seedHex, "hex");
 
-  let privateRoot = HdKey.fromMasterSeed(seedBuf);
+  let privateRoot = await DashHd.fromSeed(seedBuf, {});
 
   let defaultEntries = `m/44'/${coinType}'/0'/0/0`.split("/");
 
@@ -104,11 +99,11 @@ async function main() {
   async function walkPath(hdpath, fromEntries, toEntries) {
     //console.log(hdpath);
     if (!fromEntries.length) {
-      let key = await privateRoot.derive(hdpath);
-      let wif = await b58c.encode({
-        privateKey: key.privateKey.toString("hex"),
-      });
-      let addr = await Xaddr.publicKeyToAddr(key.publicKey);
+      let addressKey = await DashHd.derivePath(privateRoot, hdpath);
+      //@ts-ignore - TODO type needs to be optional options
+      let wif = await DashHd.toWif(addressKey.privateKey, {});
+      //@ts-ignore - TODO type needs to be optional options
+      let addr = await DashHd.toAddr(addressKey.publicKey, {});
 
       console.info(`${hdpath}: ${wif}`);
       console.info(`                 ${addr}`);
@@ -137,21 +132,6 @@ async function main() {
   }
 
   await walkPath("m", fromEntries.slice(1), toEntries.slice(1));
-
-  /*
-   *     seed.deriveChild(44, true)
-   *         .deriveChild(5, true)
-   *         .deriveChild(0, true)
-   *         .deriveChild(0)
-   *         .deriveChild(0)
-   *
-   * Or, in other words:
-   *     let walletTypeRoot = seed.deriveChild(44, true);
-   *     let coinTypeRoot = walletTypeRoot.deriveChild(5, true);
-   *     let accountRoot = coinTypeRoot.deriveChild(0, true);
-   *     let directionRoot = accountRoot.deriveChild(0);
-   *     let key = directionRoot.deriveChild(0);
-   */
 }
 
 /**
