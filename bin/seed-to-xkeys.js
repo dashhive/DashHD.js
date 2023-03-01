@@ -3,10 +3,7 @@
 
 let Fs = require("node:fs/promises");
 
-let HdKey = require("hdkey");
-
-let Base58Check = require("@dashincubator/base58check").Base58Check;
-let b58c = Base58Check.create();
+let DashHd = require("dashhd");
 
 let coinType = 5; // TODO testnet?
 
@@ -17,8 +14,19 @@ async function main() {
   if (!seedPath) {
     console.error("");
     console.error(
-      // TODO "Usage: seed-to-wif <./seed.hex> [account] [coinType]",
-      "Usage: seed-to-wif <./seed.hex> [account] [direction]",
+      // TODO "Usage: seed-to-xkey <./seed.hex> [account] [use]",
+      [
+        "",
+        "USAGE",
+        "        seed-to-xkey <./seed.hex> [account] [use]",
+        "",
+        "EXAMPLES",
+        "        seed-to-xkey <./seed.hex> 0 0",
+        "",
+        "IMPORTANT",
+        "        \"m/44'/5'\" is used as the prefix for compatibility with other Dash wallets",
+        "",
+      ].join("\n"),
     );
     console.error("");
     process.exit(1);
@@ -31,12 +39,16 @@ async function main() {
   let seedHex = txt.trim();
   let seedBuf = Buffer.from(seedHex, "hex");
 
-  let privateRoot = HdKey.fromMasterSeed(seedBuf);
+  let hdkey = await DashHd.fromSeed(seedBuf, {});
 
   // a "wallet" is the path up to `m/44'/${coinType}'/${account}'`
   // the "addresses" are the paths down from `${direction}/${index}`
-  let xKey = privateRoot.derive(`m/44'/${coinType}'/${account}'/${direction}`);
-  let xKeys = xKey.toJSON();
+  let xKey = await DashHd.derivePath(
+    hdkey,
+    `m/44'/${coinType}'/${account}'/${direction}`,
+  );
+  let xprv = await DashHd.toXPrv(xKey);
+  let xpub = await DashHd.toXPub(xKey);
   // TODO would other software know how to reconcile parent-child keys?
   //let xPrivKey = privateRoot.derive(`m/44'/${coinType}'/${account}'`);
   //let xPubKey = xPrivKey.deriveChild(0);
@@ -44,22 +56,6 @@ async function main() {
   //  parentPrivate: xPrivKey.toJSON().xpriv,
   //  childPublic: xPubKey.toJSON().xpub,
   //};
-
-  let xprvParts = await b58c.decode(xKeys.xpriv);
-  let xprv = await b58c.encode(xprvParts);
-  if (xprv !== xKeys.xpriv) {
-    throw new Error(
-      `@dashincubator/base58check gave '${xprv}', but expected '${xKeys.xpriv}'`,
-    );
-  }
-
-  let xpubParts = await b58c.decode(xKeys.xpub);
-  let xpub = await b58c.encode(xpubParts);
-  if (xpub !== xKeys.xpub) {
-    throw new Error(
-      `@dashincubator/base58check gave '${xpub}', but expected '${xKeys.xpub}'`,
-    );
-  }
 
   // stdout
   console.info(`${xprv}`);
