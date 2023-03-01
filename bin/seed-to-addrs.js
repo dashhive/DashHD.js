@@ -3,10 +3,7 @@
 
 let Fs = require("node:fs/promises");
 
-let Xaddr = require("./_xaddr.js");
-
-let Dashphrase = require("dashphrase");
-let HdKey = require("hdkey");
+let DashHd = require("dashhd");
 
 let coinType = 5; // TODO testnet?
 
@@ -14,12 +11,12 @@ async function main() {
   let args = process.argv.slice(2);
   removeNonFlags(args);
 
-  let [mnemonicPath, passPath, fromPath, toPath] = args;
-  if (!mnemonicPath) {
+  let [seedPath, fromPath, toPath] = args;
+  if (!seedPath) {
     console.error("");
     console.error("Usage:");
     console.error(
-      "        mnemonic-to-addrs <./mnemonic.txt> [./password.txt] [fromPath] [toPath]",
+      "        seed-to-addrs <./seed.hex> [./password.txt] [fromPath] [toPath]",
     );
     console.error("");
     console.error("The default from path is \"m/44'/5'/0'/0/0\".");
@@ -33,55 +30,36 @@ async function main() {
     console.error("EXAMPLES");
     console.error("");
     console.error("        # with empty password");
-    console.error('        mnemonic-to-addrs ./mnemonic.txt "" "5" "15"');
+    console.error('        seed-to-addrs ./seed.hex "" "5" "15"');
     console.error("");
     console.error("        # these are all EQUIVALENT");
-    console.error('        mnemonic-to-addrs ./mnemonic.txt ./pw.txt "5" "15"');
+    console.error('        seed-to-addrs ./seed.hex "5" "15"');
+    console.error('        seed-to-addrs ./seed.hex "0/5" "15"');
+    console.error('        seed-to-addrs ./seed.hex "0/5" "0/15"');
+    console.error('        seed-to-addrs ./seed.hex "0\'/0/5" "15"');
+    console.error('        seed-to-addrs ./seed.hex "m/44\'/5\'/0\'/0/5" "15"');
     console.error(
-      '        mnemonic-to-addrs ./mnemonic.txt ./pw.txt "0/5" "15"',
-    );
-    console.error(
-      '        mnemonic-to-addrs ./mnemonic.txt ./pw.txt "0/5" "0/15"',
-    );
-    console.error(
-      '        mnemonic-to-addrs ./mnemonic.txt ./pw.txt "0\'/0/5" "15"',
-    );
-    console.error(
-      '        mnemonic-to-addrs ./mnemonic.txt ./pw.txt "m/44\'/5\'/0\'/0/5" "15"',
-    );
-    console.error(
-      "        mnemonic-to-addrs ./mnemonic.txt ./pw.txt \"m/44'/5'/0'/0/5\" \"m/44'/5'/0'/0/15\"",
+      "        seed-to-addrs ./seed.hex \"m/44'/5'/0'/0/5\" \"m/44'/5'/0'/0/15\"",
     );
     console.error("");
+    console.error('        seed-to-addrs ./seed.hex "m/44\'/5\'/0\'/0/0" "10"');
     console.error(
-      '        mnemonic-to-addrs ./mnemonic.txt ./pw.txt "m/44\'/5\'/0\'/0/0" "10"',
+      "        seed-to-addrs ./seed.hex \"m/44'/5'/0'/0/0\" \"1'/10\"",
     );
     console.error(
-      "        mnemonic-to-addrs ./mnemonic.txt ./pw.txt \"m/44'/5'/0'/0/0\" \"1'/10\"",
-    );
-    console.error(
-      "        mnemonic-to-addrs ./mnemonic.txt ./pw.txt \"m/44'/5'/0'/0/0\" \"3'/1/5\"",
+      "        seed-to-addrs ./seed.hex \"m/44'/5'/0'/0/0\" \"3'/1/5\"",
     );
     console.error("");
     process.exit(1);
   }
 
-  let txt = await Fs.readFile(mnemonicPath, "utf8");
-  let words = txt
-    .trim()
-    .split(/[\s,]+/m)
-    .filter(Boolean);
-  let mnemonic = words.join(" ");
+  let txt = await Fs.readFile(seedPath, "utf8");
+  let seed = txt.trim();
+  let seedBuf = Buffer.from(seed, "hex");
+  let seedBytes = new Uint8Array(seedBuf);
 
-  let secret = "";
-  if (passPath) {
-    let secretTxt = await Fs.readFile(passPath, "utf8");
-    secret = secretTxt.trim();
-  }
-
-  let seedBuf = await Dashphrase.toSeed(mnemonic, secret);
-
-  let privateRoot = HdKey.fromMasterSeed(seedBuf);
+  // TODO optional options
+  let hdkey = await DashHd.fromSeed(seedBytes, {});
 
   let defaultEntries = `m/44'/${coinType}'/0'/0/0`.split("/");
 
@@ -117,8 +95,9 @@ async function main() {
   async function walkPath(hdpath, fromEntries, toEntries) {
     //console.log(hdpath);
     if (!fromEntries.length) {
-      let key = await privateRoot.derive(hdpath);
-      let addr = await Xaddr.publicKeyToAddr(key.publicKey);
+      let addressKey = await DashHd.derivePath(hdkey, hdpath);
+      //@ts-ignore - TODO optional opts
+      let addr = await DashHd.toAddr(addressKey.publicKey, {});
 
       if (hasMany) {
         console.error(`\n${hdpath}:`);
