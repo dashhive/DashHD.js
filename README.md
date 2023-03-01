@@ -2,6 +2,37 @@
 
 Browser, Node, Bundler, and CLI compatible Dash HD Wallet tools
 
+```sh
+dashhd <./seed-or-key> [start-hdpath-or-index] [end]
+```
+
+```sh
+dashhd ./seed.hex "m/44'/5'"                          # error
+dashhd ./seed.hex "m/44'/5'" --force=xprv
+dashhd ./seed.hex "m/44'/5'" --force=wif
+
+dashhd ./seed.hex "m/44'/5'/0'/0"                     # xprv + xpub
+dashhd ./seed.hex "m/44'/5'/0'/0" "m/44'/5'/5'/0"     # xprvs + xpubs
+dashhd ./seed.hex "/0'/0" "/1'/0"                     # xprvs + xpubs
+
+dashhd ./seed.hex "m/44'/5'/0'/0/0"                   # wif + addr
+dashhd ./seed.hex "m/44'/5'/0'/0/0" "m/44'/5'/1'/0/2" # wif + addr
+dashhd ./seed.hex "/0'/0/0" "2"                       # wif + addr
+dashhd ./seed.hex "0" "2"                             # wif + addr
+dashhd ./seed.hex # error
+
+dashhd ./me.xprv "m/44'/5'/0'/0/0"    # error
+dashhd ./me.xprv "0"                  # wif + addr
+dashhd ./me.xprv "0" "5"              # wif + addr
+dashhd ./me.xprv "0/0'/0" --force=wif # wif + addr
+dashhd ./me.xprv                      # xpub
+
+dashhd ./me.xpub "0"     # addr
+dashhd ./me.xpub "0" "5" # addr
+
+dashhd ./0.wif           # addr
+```
+
 # Table of Contents
 
 - CLI utils
