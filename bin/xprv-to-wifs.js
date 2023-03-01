@@ -23,6 +23,7 @@ async function main() {
 
   let startIndex = parseInt(args[1], 10) || 0;
   let endIndex = parseInt(args[2], 10) || startIndex;
+  let hasMany = "string" === typeof args[2];
 
   let txt = await Fs.readFile(xprvPath, "utf8");
   let xprv = txt.trim();
@@ -55,8 +56,13 @@ async function main() {
     let fullpath = `${hdpath}/${index}`;
     let ws = " ".repeat(fullpath.length + 1);
 
-    console.info(`${fullpath}: ${wif}`);
-    console.info(`${ws} ${addr}`);
+    if (hasMany) {
+      console.info(`${fullpath}: ${wif}`);
+      console.info(`${ws} ${addr}`);
+    } else {
+      console.info(`${wif}`);
+      console.error(`${addr}`);
+    }
   }
 }
 

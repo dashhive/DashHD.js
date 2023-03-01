@@ -25,6 +25,7 @@ async function main() {
 
   let startIndex = parseInt(args[1], 10) || 0;
   let endIndex = parseInt(args[2], 10) || startIndex;
+  let hasMany = "string" === typeof args[2];
 
   let txt = await Fs.readFile(xpubPath, "utf8");
   let xpub = txt.trim();
@@ -52,7 +53,9 @@ async function main() {
     let addr = await Xaddr.publicKeyToAddr(hdPub.publicKey);
     let fullpath = `${hdpath}/${index}`;
 
-    console.error(`\n${fullpath}`);
+    if (hasMany) {
+      console.error(`\n${fullpath}`);
+    }
     console.info(addr);
   }
 }

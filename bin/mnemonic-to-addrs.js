@@ -87,6 +87,7 @@ async function main() {
 
   let fromEntries = (fromPath || "").split("/").filter(Boolean);
   let toEntries = (toPath || "").split("/").filter(Boolean);
+  let hasMany = "string" === typeof toPath;
 
   let possibleChild = toEntries.length <= fromEntries.length;
   if (!possibleChild) {
@@ -119,7 +120,9 @@ async function main() {
       let key = await privateRoot.derive(hdpath);
       let addr = await Xaddr.publicKeyToAddr(key.publicKey);
 
-      console.error(`\n${hdpath}:`);
+      if (hasMany) {
+        console.error(`\n${hdpath}:`);
+      }
       console.info(`${addr}`);
       return;
     }

@@ -72,6 +72,8 @@ async function main() {
     .slice(0, fromEntries.length - toEntries.length)
     .concat(toEntries);
 
+  let multi = "string" === typeof toPath;
+
   /*
   // skip 'm'
   for (let pIndex = 1; pIndex < defaultEntries.length; pIndex += 1) {
@@ -105,8 +107,13 @@ async function main() {
       //@ts-ignore - TODO type needs to be optional options
       let addr = await DashHd.toAddr(addressKey.publicKey, {});
 
-      console.info(`${hdpath}: ${wif}`);
-      console.info(`                 ${addr}`);
+      if (multi) {
+        console.info(`${hdpath}: ${wif}`);
+        console.info(`                 ${addr}`);
+      } else {
+        console.info(`${wif}`);
+        console.error(`${addr}`);
+      }
       return;
     }
 
@@ -150,7 +157,6 @@ function removeNonFlags(arr) {
 
 main()
   .then(function () {
-    console.info();
     process.exit(0);
   })
   .catch(function (err) {
