@@ -662,7 +662,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   DashHd.HARDENED_OFFSET = HARDENED_OFFSET;
 
   // @ts-ignore
-  window.DashHd = DashHd
+  window.DashHd = DashHd;
 })(("object" === typeof window && window) || {}, DashHd);
 if ("object" === typeof module) {
   module.exports = DashHd;
