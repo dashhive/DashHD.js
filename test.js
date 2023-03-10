@@ -3,6 +3,7 @@
 let DashHd = require("./");
 //let DashHd = require("dashhd");
 let DashPhrase = require("dashphrase");
+let DashKeys = require("dashkeys");
 
 let words = "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong";
 let secret = "TREZOR";
@@ -23,6 +24,10 @@ let addr111 = "XueHW2ELMxoXzXcaHMxmwVWhcADE1W5s8c";
 async function getWalletKeys() {
   let seed = await DashPhrase.toSeed(words, secret);
   let wallet = await DashHd.fromSeed(seed);
+  let seedHex = DashKeys.utils.bytesToHex(seed);
+  console.info(`Testing against Zoomonic Seed:`);
+  console.info(`    ${seedHex}`);
+  console.info();
 
   // m/44'/5'/0'/0/0
   let accountIndex = 0;
@@ -156,6 +161,7 @@ async function getWalletKeys() {
   console.info(`           WIF:  ${wif}`);
   console.info(`       Address:  ${addr}`);
   console.info();
+  console.info(`PASS: all outputs match expected values`);
 }
 
 async function main() {
