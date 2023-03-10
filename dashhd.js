@@ -795,7 +795,7 @@ if ("object" === typeof module) {
 /**
  * @callback HDFromSeed
  * @param {Uint8Array} seedBytes
- * @param {HDFromSeedOptions} opts
+ * @param {HDFromSeedOptions} [opts]
  * @returns {Promise<HDWallet>}
  */
 
@@ -814,7 +814,7 @@ if ("object" === typeof module) {
 /**
  * @callback HDToAddr
  * @param {Uint8Array} pubBytes
- * @param {HDToAddressOpts} opts
+ * @param {HDToAddressOpts} [opts]
  * @returns {Promise<String>}
  */
 
@@ -834,13 +834,13 @@ if ("object" === typeof module) {
 /**
  * @callback HDToWif
  * @param {Uint8Array} privBytes
- * @param {HDToAddressOpts} opts
+ * @param {HDToAddressOpts} [opts]
  * @returns {Promise<String>}
  */
 
 /**
  * @typedef HDToAddressOpts
- * @prop {String} version
+ * @prop {String} [version]
  */
 
 /**
