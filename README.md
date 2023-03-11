@@ -1206,6 +1206,8 @@ The path that defines an HD Key - typically of the BIP-44 variety:
 - an _Account_, ex: `m/44'/5'/0'` (depth 3)
 - an _X Key_ (_XPrv_ or _XPub_), ex: `m/44'/5'/0'/0` (depth 4, a.k.a. _Use_)
 - an _Address Key_, ex: `m/44'/5'/0'/0/0` (depth 5, the end)
+- `'` is used for "hardened" (parent) key segments, \
+  but not for "public" (shareable) child key segments
 
 In general:
 
