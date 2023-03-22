@@ -125,7 +125,7 @@ let DashPhrase = window.DashPhrase;
 
      ```js
      let hdpath = `m/44'/5'/0'/0/0`;
-     let key = await DashHd.derivePath(hdpath);
+     let key = await DashHd.derivePath(walletKey, hdpath);
 
      let wif = await DashHd.toWif(key.privateKey);
      let address = await DashHd.toAddr(key.publicKey);
