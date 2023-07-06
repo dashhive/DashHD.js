@@ -424,31 +424,26 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   //@ts-ignore
-  DashHd._derive = async function (seed, chainParts) {
-    //let I = await Utils.sha512hmac(ROOT_CHAIN, seedBuffer);
-    //let IL = I.subarray(0, 32);
-    //let IR = I.subarray(32);
-    //let publicKey = await Utils.toPublicKey(IL);
-
-    let I = await Utils.sha512hmac(chainParts.chainCode, seed);
-    let IL = I.slice(0, 32);
-    let IR = I.slice(32);
+  DashHd._derive = async function (indexedKey, parent) {
+    // seed = indexedKey
+    // I = nextDepth
+    // IL = keyTweak
+    // IR = nextChainCode
+    let nextDepth = await Utils.sha512hmac(parent.chainCode, indexedKey);
+    let keyTweak = nextDepth.slice(0, 32);
+    let nextChainCode = nextDepth.slice(32);
 
     let nextPrivKey;
-    let nextPubkey;
-    if (chainParts.privateKey) {
-      nextPrivKey = await Utils.privateKeyTweakAdd(chainParts.privateKey, IL);
-      nextPubkey = await Utils.toPublicKey(nextPrivKey);
-    } else if (chainParts.publicKey) {
-      nextPubkey = await Utils.publicKeyTweakAdd(chainParts.publicKey, IL);
-    } else {
-      // TODO
-      nextPrivKey = IL;
-      nextPubkey = await Utils.toPublicKey(IL);
+    if (parent.privateKey) {
+      let priv = parent.privateKey;
+      nextPrivKey = await Utils.privateKeyTweakAdd(priv, keyTweak);
     }
 
+    let pub = parent.publicKey;
+    let nextPubkey = await Utils.publicKeyTweakAdd(pub, keyTweak);
+
     return {
-      chainCode: IR,
+      chainCode: nextChainCode,
       privateKey: nextPrivKey,
       publicKey: nextPubkey,
     };
@@ -513,9 +508,19 @@ var DashHd = ("object" === typeof module && exports) || {};
     let coinType = opts?.coinType ?? 5;
     let versions = opts?.versions || DashHd.MAINNET;
 
-    let chainAndKeys = await DashHd._derive(seed, {
-      chainCode: ROOT_CHAIN,
-    });
+    // I = rootDepth
+    // IL = rootPrivKey
+    // IR = rootChainCode
+    let rootDepth = await Utils.sha512hmac(ROOT_CHAIN, seed);
+    let rootPrivKey = rootDepth.slice(0, 32);
+    let rootChainCode = rootDepth.slice(32);
+    let rootPubkey = await Utils.toPublicKey(rootPrivKey);
+
+    let chainAndKeys = {
+      chainCode: rootChainCode,
+      privateKey: rootPrivKey,
+      publicKey: rootPubkey,
+    };
 
     let hdkey = Object.assign(
       {
@@ -749,7 +754,7 @@ if ("object" === typeof module) {
  * @typedef HDDeriveHelperOptions
  * @prop {Uint8Array} chainCode
  * @prop {Uint8Array|undefined?} [privateKey]
- * @prop {Uint8Array|undefined?} [publicKey]
+ * @prop {Uint8Array} publicKey
  */
 
 /**
