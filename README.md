@@ -99,7 +99,7 @@ let DashPhrase = require("dashphrase");
 ## Browser
 
 ```html
-<script src="https://unpkg.com/@dashincubator/secp256k1.js"></script>
+<script src="https://unpkg.com/@dashincubator/secp256k1@1.7.1-5/secp256k1.js"></script>
 <script src="https://unpkg.com/dashkeys@1.x/dashkeys.js"></script>
 <script src="https://unpkg.com/dashhd@3.x/dashhd.js"></script>
 ```
