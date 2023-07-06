@@ -47,7 +47,7 @@
 /**
  * @typedef HDKey
  * @prop {HDVersions} versions - magic bytes for base58 prefix
- * @prop {Number} depth - of hd path - typically 0 is seed, 1-3 hardened, 4-5 are not
+ * @prop {Number} depth - of hd path - typically 0 is seed, 1-3 hardened, 4-5 public
  * @prop {Number} parentFingerprint - 32-bit int, slice of id, stored in child xkeys
  * @prop {Number} index - the final segment of an HD Path, the index of the wif/addr
  * @prop {Uint8Array} chainCode - extra 32-bytes of shared entropy for xkeys
@@ -374,24 +374,25 @@ var DashHd = ("object" === typeof module && exports) || {};
   let _indexDv = new DataView(_indexBuffer.buffer);
 
   DashHd.deriveChild = async function (hdkey, index, hardened = HARDENED) {
-    let seed = new Uint8Array(INDEXED_KEY_SIZE);
+    // seed = indexedKey
+    let indexedKey = new Uint8Array(INDEXED_KEY_SIZE);
     if (hardened) {
       if (!hdkey.privateKey) {
         throw new Error("Could not derive hardened child key");
       }
       index += HARDENED_OFFSET;
-      seed.set([0], 0);
-      seed.set(hdkey.privateKey, 1);
+      indexedKey.set([0], 0);
+      indexedKey.set(hdkey.privateKey, 1);
     } else {
-      seed.set(hdkey.publicKey, 0);
+      indexedKey.set(hdkey.publicKey, 0);
     }
     _indexDv.setUint32(0, index, BUFFER_BE);
-    seed.set(_indexBuffer, KEY_SIZE);
+    indexedKey.set(_indexBuffer, KEY_SIZE);
 
     let chainAndKeys;
     try {
       //@ts-ignore
-      chainAndKeys = await DashHd._derive(seed, hdkey);
+      chainAndKeys = await DashHd._derive(indexedKey, hdkey);
     } catch (e) {
       // In essence:
       // if it couldn't produce a public key, just go on the next one
@@ -424,28 +425,28 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   //@ts-ignore
-  DashHd._derive = async function (indexedKey, parent) {
+  DashHd._derive = async function (indexedKey, xParent) {
     // seed = indexedKey
-    // I = nextDepth
+    // I = hash
     // IL = keyTweak
     // IR = nextChainCode
-    let nextDepth = await Utils.sha512hmac(parent.chainCode, indexedKey);
-    let keyTweak = nextDepth.slice(0, 32);
-    let nextChainCode = nextDepth.slice(32);
+    let hash = await Utils.sha512hmac(xParent.chainCode, indexedKey);
+    let keyTweak = hash.slice(0, 32);
+    let hashedChainCode = hash.slice(32);
 
-    let nextPrivKey;
-    if (parent.privateKey) {
-      let priv = parent.privateKey;
-      nextPrivKey = await Utils.privateKeyTweakAdd(priv, keyTweak);
+    let tweakedPrivKey;
+    if (xParent.privateKey) {
+      let priv = xParent.privateKey;
+      tweakedPrivKey = await Utils.privateKeyTweakAdd(priv, keyTweak);
     }
 
-    let pub = parent.publicKey;
-    let nextPubkey = await Utils.publicKeyTweakAdd(pub, keyTweak);
+    let pub = xParent.publicKey;
+    let tweakedPubkey = await Utils.publicKeyTweakAdd(pub, keyTweak);
 
     return {
-      chainCode: nextChainCode,
-      privateKey: nextPrivKey,
-      publicKey: nextPubkey,
+      chainCode: hashedChainCode,
+      privateKey: tweakedPrivKey,
+      publicKey: tweakedPubkey,
     };
   };
 
@@ -508,12 +509,12 @@ var DashHd = ("object" === typeof module && exports) || {};
     let coinType = opts?.coinType ?? 5;
     let versions = opts?.versions || DashHd.MAINNET;
 
-    // I = rootDepth
+    // I = hash
     // IL = rootPrivKey
     // IR = rootChainCode
-    let rootDepth = await Utils.sha512hmac(ROOT_CHAIN, seed);
-    let rootPrivKey = rootDepth.slice(0, 32);
-    let rootChainCode = rootDepth.slice(32);
+    let hash = await Utils.sha512hmac(ROOT_CHAIN, seed);
+    let rootPrivKey = hash.slice(0, 32);
+    let rootChainCode = hash.slice(32);
     let rootPubkey = await Utils.toPublicKey(rootPrivKey);
 
     let chainAndKeys = {
@@ -744,8 +745,8 @@ if ("object" === typeof module) {
 
 /**
  * @callback HDDeriveHelper
- * @param {Uint8Array} seed - derived from index and chain code, or root
- * @param {HDDeriveHelperOptions} chainParts
+ * @param {Uint8Array} indexedKey - (misnomer "seed") the parent key bytes + index bytes
+ * @param {HDDeriveHelperOptions} xParent - the xKey parent (keys, chain code, etc)
  * returns {Promise<HDDeriveHelperOptions>}
  * @throws Error - in the rare case the index can't produce a valid public key
  */
