@@ -327,7 +327,7 @@ var DashHd = ("object" === typeof module && exports) || {};
     let xpubPart = DashHd._toXBytes(hdkey, hdkey.publicKey);
     let xpubBytes = new Uint8Array(xpubPart.length + 4);
     let xkeyDv = new DataView(xpubBytes.buffer);
-    xkeyDv.setUint32(0, DashHd.MAINNET.private, BUFFER_BE);
+    xkeyDv.setUint32(0, DashHd.MAINNET.public, BUFFER_BE);
     xpubBytes.set(xpubPart, 4);
     return xpubBytes;
   };
