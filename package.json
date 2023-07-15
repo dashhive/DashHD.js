@@ -1,6 +1,6 @@
 {
   "name": "dashhd",
-  "version": "3.0.6",
+  "version": "3.1.0",
   "description": "Manage HD Keys from HD Wallet Seed and Extended (xprv, xpub) Key Paths. Part of $DASH Tools.",
   "main": "dashhd.js",
   "browser": {
