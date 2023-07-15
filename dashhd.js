@@ -248,7 +248,8 @@ var DashHd = ("object" === typeof module && exports) || {};
   let XKEY_SIZE = 74;
   let XKEY_DEPTH = 4; // m/44'/5'/0'/<0>[/0]
 
-  // Bitcoin hardcoded by default, can use package `coininfo` for others
+  // Bitcoin defaults hard-coded by default.
+  // Use package `coininfo` for others.
   DashHd.MAINNET = { private: 0x0488ade4, public: 0x0488b21e };
   DashHd.TESTNET = { private: 0x043587cf, public: 0x04358394 };
 
@@ -306,12 +307,14 @@ var DashHd = ("object" === typeof module && exports) || {};
   };
 
   // TODO - missing custom version
-  DashHd.toXPrvBytes = function (hdkey) {
+  DashHd.toXPrvBytes = function (hdkey, opts) {
+    let version = opts?.version || DashHd.MAINNET.private;
+
     //@ts-ignore - will throw if null
     let xprvPart = DashHd._toXBytes(hdkey, hdkey.privateKey);
     let xprvBytes = new Uint8Array(xprvPart.length + 4);
     let xkeyDv = new DataView(xprvBytes.buffer);
-    xkeyDv.setUint32(0, DashHd.MAINNET.private, BUFFER_BE);
+    xkeyDv.setUint32(0, version, BUFFER_BE);
     xprvBytes.set(xprvPart, 4);
     return xprvBytes;
   };
@@ -322,12 +325,13 @@ var DashHd = ("object" === typeof module && exports) || {};
     return xpub;
   };
 
-  // TODO - missing custom version
-  DashHd.toXPubBytes = function (hdkey) {
+  DashHd.toXPubBytes = function (hdkey, opts) {
+    let version = opts?.version || DashHd.MAINNET.public;
+
     let xpubPart = DashHd._toXBytes(hdkey, hdkey.publicKey);
     let xpubBytes = new Uint8Array(xpubPart.length + 4);
     let xkeyDv = new DataView(xpubBytes.buffer);
-    xkeyDv.setUint32(0, DashHd.MAINNET.public, BUFFER_BE);
+    xkeyDv.setUint32(0, version, BUFFER_BE);
     xpubBytes.set(xpubPart, 4);
     return xpubBytes;
   };
@@ -821,7 +825,13 @@ if ("object" === typeof module) {
 /**
  * @callback HDToXKeyBytes
  * @param {HDKey} hdkey
+ * @param {HDToXKeyBytesOpts} [opts]
  * @returns {Uint8Array}
+ */
+
+/**
+ * @typedef HDToXKeyBytesOpts
+ * @prop {Number} [version]
  */
 
 /**
