@@ -705,6 +705,12 @@ var DashHd = ("object" === typeof module && exports) || {};
     return hdkey;
   };
 
+  DashHd.toPublic = function (_hdkey) {
+    let hdkey = Object.assign({}, _hdkey);
+    hdkey.privateKey = null;
+    return hdkey;
+  };
+
   /**
    * @param {Boolean} assertion
    * @param {String} message
