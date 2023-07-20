@@ -239,6 +239,8 @@ However, production code will look more like this:
       RECEIVE, CHANGE
   async fromSeed(seedBytes, opts)   // depth-0 hdkey (Wallet)
   async fromXKey(xprv||xpub, opts)  // depth-4 hdkey (XKey)
+  async toPublic(xKey)
+  async wipePrivateData(xKey)
   async toWif(privBytes, opts)
   async toAddr(pubBytes, opts)
   async toXPrv(xprvKey, opts)
@@ -413,6 +415,22 @@ let xkey = await DashHd.fromXKey(xprvOrXPub, options);
     normalizePublicKey: false, // validate pubkey by re-ploting X,Y on curve
     versions: DashHd.MAINNET, // must match the given version
 }
+```
+
+### `toPublic(xkey)`
+
+Creates a copy of the HD Key with `privateKey` set to `null`.
+
+```js
+let xpubKey = await DashHd.toPublic(xprvKey);
+```
+
+### `wipePrivateData(xkey)`
+
+Performs an in-place secure erase of the private key memory.
+
+```js
+await DashHd.wipePrivateData(xprvKey);
 ```
 
 ### `toWif(privBytes, opts)`

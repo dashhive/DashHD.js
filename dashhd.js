@@ -14,6 +14,7 @@
  * @prop {HDToXKeyBytes} toXPubBytes
  * @prop {HDUtils} utils
  * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
+ * @prop {HDToPublic} toPublic - returns public key
  * @prop {Number} HARDENED_OFFSET - 0x80000000
  * @prop {HDVersions} MAINNET - 'xprv' & 'xpub'
  * @prop {HDVersions} TESTNET - 'tprv' & 'tpub'
@@ -651,6 +652,12 @@ var DashHd = ("object" === typeof module && exports) || {};
     return hdkey;
   };
 
+  DashHd.toPublic = function (_hdkey) {
+    let hdkey = Object.assign({}, _hdkey);
+    hdkey.privateKey = null;
+    return hdkey;
+  };
+
   DashHd.wipePrivateData = function (hdkey) {
     if (hdkey.privateKey) {
       Utils.secureErase(hdkey.privateKey);
@@ -906,6 +913,12 @@ if ("object" === typeof module) {
 /**
  * @callback HDSetBuffer
  * @param {Uint8Array} buf
+ */
+
+/**
+ * @callback HDToPublic
+ * @param {HDKey} hdkey
+ * @returns {HDKey}
  */
 
 /**
