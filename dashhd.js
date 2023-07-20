@@ -269,6 +269,8 @@ var DashHd = ("object" === typeof module && exports) || {};
   let XKEY_SIZE = 74;
   let XKEY_DEPTH = 4; // m/44'/5'/0'/<0>[/0]
 
+  DashHd._utils = Utils;
+
   // Bitcoin defaults hard-coded by default.
   // Use package `coininfo` for others.
   DashHd.MAINNET = { private: 0x0488ade4, public: 0x0488b21e };
