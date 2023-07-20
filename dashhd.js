@@ -6,6 +6,8 @@
  * @prop {HDFingerprint} _fingerprint
  * @prop {HDFromSeed} fromSeed
  * @prop {HDFromXKey} fromXKey
+ * @prop {HDToId} toId
+ * @prop {HDToIdBytes} toIdBytes
  * @prop {HDToAddr} toAddr
  * @prop {HDToWif} toWif
  * @prop {HDToXPrv} toXPrv
@@ -36,6 +38,7 @@
  * @prop {HDHasher} ripemd160sum
  * @prop {HDHasher} sha256sum
  * @prop {HDHasher} sha512hmac
+ * @prop {HDBase64Url} bytesToBase64Url
  * @prop {HDKeyToKey} toPublicKey
  */
 
@@ -217,6 +220,23 @@ var DashHd = ("object" === typeof module && exports) || {};
     let sig = await Crypto.subtle.sign("HMAC", hmacKey, data);
 
     return new Uint8Array(sig);
+  };
+
+  /** @type {HDBase64Url} */
+  Utils.bytesToBase64Url = function (bytes) {
+    let bins = [];
+
+    for (let i = 0; i < bytes.length; i += 1) {
+      let b = bytes[i];
+      let s = String.fromCodePoint(b);
+      bins.push(s);
+    }
+
+    let str = bins.join("");
+    let b64 = btoa(str);
+    let b64url = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+
+    return b64url;
   };
 
   /** @type {HDSecureErase} */
@@ -652,6 +672,23 @@ var DashHd = ("object" === typeof module && exports) || {};
     return hdkey;
   };
 
+  DashHd.toId = async function (hdkey) {
+    let idBytes = await DashHd.toIdBytes(hdkey);
+    let id = Utils.bytesToBase64Url(idBytes);
+
+    return id;
+  };
+
+  DashHd.toIdBytes = async function (hdkey) {
+    let xpubBytes = await DashHd.toXPubBytes(hdkey);
+
+    let hashBuffer = await Crypto.subtle.digest("SHA-256", xpubBytes);
+    let idBuffer = hashBuffer.slice(0, 8);
+    let idBytes = new Uint8Array(idBuffer);
+
+    return idBytes;
+  };
+
   DashHd.toPublic = function (_hdkey) {
     let hdkey = Object.assign({}, _hdkey);
     hdkey.privateKey = null;
@@ -836,6 +873,18 @@ if ("object" === typeof module) {
  */
 
 /**
+ * @callback HDToId
+ * @param {HDKey} hdkey
+ * @returns {Promise<String>}
+ */
+
+/**
+ * @callback HDToIdBytes
+ * @param {HDKey} hdkey
+ * @returns {Promise<Uint8Array>}
+ */
+
+/**
  * @callback HDToXKeyBytes
  * @param {HDKey} hdkey
  * @param {HDToXKeyBytesOpts} [opts]
@@ -876,6 +925,12 @@ if ("object" === typeof module) {
  * @callback HDToXPub
  * @param {HDKey} hdkey
  * @returns {Promise<String>}
+ */
+
+/**
+ * @callback HDBase64Url
+ * @param {Uint8Array} bytes
+ * @returns {String} - URL-Safe Base64 Encoding
  */
 
 /**
