@@ -85,7 +85,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   const PUBLIC = false;
 
   //@ts-ignore
-  let Crypto = window.crypto || require("crypto");
+  let Crypto = globalThis.crypto;
 
   //@ts-ignore
   /** @type {import('dashkeys').DashKeys} */
@@ -99,8 +99,6 @@ var DashHd = ("object" === typeof module && exports) || {};
    * @param {Object.<String, any>} [opts]
    */
   Utils.decode = async function (base58key, opts) {
-    //@ts-ignore - wth?
-    let DashKeys = window.DashKeys || require("dashkeys");
     //@ts-ignore
     return await DashKeys.decode(base58key, opts);
   };
@@ -111,8 +109,6 @@ var DashHd = ("object" === typeof module && exports) || {};
    * @param {Number} [opts.version]
    */
   Utils.encodeXPrv = async function (keyBytes, opts) {
-    //@ts-ignore - wth?
-    let DashKeys = window.DashKeys || require("dashkeys");
     let version = "xprv";
     if (opts?.version) {
       version = opts?.version.toString(16);
@@ -127,8 +123,6 @@ var DashHd = ("object" === typeof module && exports) || {};
    * TODO - pass tpub
    */
   Utils.encodeXPub = async function (keyBytes) {
-    //@ts-ignore - wth?
-    let DashKeys = window.DashKeys || require("dashkeys");
     //@ts-ignore
     return await DashKeys.encodeKey(keyBytes, { version: "xpub" });
   };
@@ -178,17 +172,11 @@ var DashHd = ("object" === typeof module && exports) || {};
   /** @type {HDHasher} */
   Utils.ripemd160sum = async function (bytes) {
     //@ts-ignore
-    let DashKeys = window.DashKeys || require("dashkeys");
-    //@ts-ignore
     return await DashKeys.utils.ripemd160sum(bytes);
   };
 
   /** @type {HDHasher} */
   Utils.sha256sum = async function (bytes) {
-    if (!Crypto.subtle) {
-      let sha256 = Crypto.createHash("sha256").update(bytes).digest();
-      return new Uint8Array(sha256);
-    }
     let arrayBuffer = await Crypto.subtle.digest("SHA-256", bytes);
     let hashBytes = new Uint8Array(arrayBuffer);
     return hashBytes;
@@ -196,11 +184,6 @@ var DashHd = ("object" === typeof module && exports) || {};
 
   /** @type {HDHmac} */
   Utils.sha512hmac = async function (entropy, data) {
-    if (!Crypto.subtle) {
-      let buf = Crypto.createHmac("sha512", entropy).update(data).digest();
-      return new Uint8Array(buf);
-    }
-
     /** @type {"raw"|"pkcs8"|"spki"} */
     let format = "raw";
     let algo = {
@@ -241,11 +224,6 @@ var DashHd = ("object" === typeof module && exports) || {};
 
   /** @type {HDSecureErase} */
   Utils.secureErase = function (buf) {
-    if (!Crypto.getRandomValues) {
-      Crypto.randomBytes(buf.length).copy(buf);
-      return;
-    }
-
     Crypto.getRandomValues(buf);
   };
 
