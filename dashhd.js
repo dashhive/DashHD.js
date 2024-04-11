@@ -14,7 +14,7 @@
  * @prop {HDToXKeyBytes} toXPrvBytes
  * @prop {HDToXPub} toXPub
  * @prop {HDToXKeyBytes} toXPubBytes
- * @prop {HDUtils} utils
+ * @prop {HDUtils} _utils
  * @prop {HDWipePrivates} wipePrivateData - randomizes private key buffer in-place
  * @prop {HDToPublic} toPublic - returns public key
  * @prop {Number} HARDENED_OFFSET - 0x80000000
@@ -61,7 +61,7 @@
 
 /**
  * @typedef HDKeyOptions
- * @prop {HDVersions?} [versions]
+ * @prop {HDVersionsOption?} [versions]
  * @prop {Number?} [depth]
  * @prop {Number?} [parentFingerprint]
  * @prop {Number} index
@@ -106,13 +106,18 @@ var DashHd = ("object" === typeof module && exports) || {};
   /**
    * @param {Uint8Array} keyBytes
    * @param {Object} opts
-   * @param {Number} [opts.version]
+   * @param {String|Uint32} [opts.version]
    */
   Utils.encodeXPrv = async function (keyBytes, opts) {
     let version = "xprv";
     if (opts?.version) {
-      version = opts?.version.toString(16);
-      version = version.padStart(8, "0");
+      if (opts.version === "tprv") {
+        version = opts.version;
+      } else {
+        // intended for numbers, but won't break hex strings
+        version = opts.version.toString(16);
+        version = version.padStart(8, "0");
+      }
     }
     //@ts-ignore
     return await DashKeys.encodeKey(keyBytes, { version });
@@ -120,11 +125,22 @@ var DashHd = ("object" === typeof module && exports) || {};
 
   /**
    * @param {Uint8Array} keyBytes
-   * TODO - pass tpub
+   * @param {Object} opts
+   * @param {String|Uint32} [opts.version]
    */
-  Utils.encodeXPub = async function (keyBytes) {
+  Utils.encodeXPub = async function (keyBytes, opts) {
+    let version = "xpub";
+    if (opts?.version) {
+      if (opts.version === "tpub") {
+        version = opts.version;
+      } else {
+        // intended for numbers, but won't break hex strings
+        version = opts.version.toString(16);
+        version = version.padStart(8, "0");
+      }
+    }
     //@ts-ignore
-    return await DashKeys.encodeKey(keyBytes, { version: "xpub" });
+    return await DashKeys.encodeKey(keyBytes, { version: version });
   };
   /** @type {HDKeyTweak} */
   Utils.privateKeyTweakAdd = async function (privateKeyCopy, tweak) {
@@ -247,6 +263,7 @@ var DashHd = ("object" === typeof module && exports) || {};
   let XKEY_SIZE = 74;
   let XKEY_DEPTH = 4; // m/44'/5'/0'/<0>[/0]
 
+  //@ts-ignore
   DashHd._utils = Utils;
 
   // Bitcoin defaults hard-coded by default.
@@ -296,19 +313,21 @@ var DashHd = ("object" === typeof module && exports) || {};
     if (privBytes.length !== 32) {
       throw new Error("expected a private key (size 32)");
     }
-    return await DashKeys.encodeKey(privBytes);
+    return await DashKeys.encodeKey(privBytes, opts);
   };
 
-  DashHd.toXPrv = async function (hdkey) {
+  DashHd.toXPrv = async function (hdkey, opts) {
     //@ts-ignore - will throw if null
     let xprvBytes = DashHd._toXBytes(hdkey, hdkey.privateKey);
     //@ts-ignore - wth?
-    let xprv = await Utils.encodeXPrv(xprvBytes);
+    let xprv = await Utils.encodeXPrv(xprvBytes, opts);
     return xprv;
   };
 
   // TODO - missing custom version
   DashHd.toXPrvBytes = function (hdkey, opts) {
+    /** @type {Number} */
+    //@ts-ignore
     let version = opts?.version || DashHd.MAINNET.private;
 
     //@ts-ignore - will throw if null
@@ -320,14 +339,28 @@ var DashHd = ("object" === typeof module && exports) || {};
     return xprvBytes;
   };
 
-  DashHd.toXPub = async function (hdkey) {
+  DashHd.toXPub = async function (hdkey, opts) {
     let xpubBytes = DashHd._toXBytes(hdkey, hdkey.publicKey);
-    let xpub = await Utils.encodeXPub(xpubBytes);
+    let xpub = await Utils.encodeXPub(xpubBytes, opts);
     return xpub;
   };
 
   DashHd.toXPubBytes = function (hdkey, opts) {
-    let version = opts?.version || DashHd.MAINNET.public;
+    /** @type {Uint32} */
+    //@ts-ignore - it's a number, I promise
+    let version = DashHd.MAINNET.public;
+    if (opts?.version) {
+      let [_, versionUint32] = // jshint ignore:line
+        _versionToTuple(
+          opts.version,
+          "xpub",
+          //@ts-ignore - it's a number, I promise
+          DashHd.MAINNET.public,
+          "tpub",
+          DashHd.TESTNET.public,
+        );
+      version = versionUint32;
+    }
 
     let xpubPart = DashHd._toXBytes(hdkey, hdkey.publicKey);
     let xpubBytes = new Uint8Array(xpubPart.length + 4);
@@ -605,11 +638,17 @@ var DashHd = ("object" === typeof module && exports) || {};
       publicKey = key;
     }
 
-    let xprvHex = "0x0" + versions.private.toString(16);
-    let xpubHex = "0x0" + versions.public.toString(16);
     if (publicKey) {
+      let [xpubHex, xpubUint32] = _versionToTuple(
+        versions.public,
+        "xpub",
+        //@ts-ignore - it's a number, I promise
+        DashHd.MAINNET.public,
+        "tpub",
+        DashHd.TESTNET.public,
+      );
       assert(
-        version === versions.public,
+        version === xpubUint32,
         `Version mismatch: version does not match ${xpubHex} (public)`,
       );
       // at one point xy pubs (1 + 64 bytes) were allowed (per spec)
@@ -619,8 +658,16 @@ var DashHd = ("object" === typeof module && exports) || {};
         publicKey = await Utils.publicKeyNormalize(publicKey);
       }
     } else {
+      let [xprvHex, xprvUint32] = _versionToTuple(
+        versions.private,
+        "xprv",
+        //@ts-ignore - it's a number, I promise
+        DashHd.MAINNET.private,
+        "tprv",
+        DashHd.TESTNET.private,
+      );
       assert(
-        version === versions.private,
+        version === xprvUint32,
         `Version mismatch: version does not match ${xprvHex} (private)`,
       );
       publicKey = await Utils.toPublicKey(privateKey);
@@ -651,6 +698,33 @@ var DashHd = ("object" === typeof module && exports) || {};
     hdkey = DashHd._createXKey(hdkey);
     return hdkey;
   };
+
+  /**
+   *
+   * @param {String|Number} version
+   * @param {String} mainStr - 'xprv'|'xpub'
+   * @param {Number} mainInt - DashHd.MAINNET.private|DashHd.MAINNET.public
+   * @param {String} testStr - 'tprv'|'tpub'
+   * @param {Number} testInt - DashHd.TESTNET.private|DashHd.TESTNET.publi c
+   * @returns {[String, Number]}
+   */
+  function _versionToTuple(version, mainStr, mainInt, testInt, testStr) {
+    let isMainnet = version === mainStr || version === "mainnet";
+    let isTestnet = version === testStr || version === "testnet";
+    if (isMainnet) {
+      version = mainInt;
+    } else if (isTestnet) {
+      version = testInt;
+    }
+    // intended for uint32, but doesn't break hex
+    let xkeyHex = version.toString(16);
+    xkeyHex = xkeyHex.padStart(8, "0");
+    let xkeyUint32 = parseInt(xkeyHex, 16);
+    xkeyUint32 = xkeyUint32 >>> 0; /* jshint ignore:line */ // coerce uint32
+    xkeyHex = `0x${xkeyHex}`;
+
+    return [xkeyHex, xkeyUint32];
+  }
 
   DashHd.toId = async function (hdkey) {
     let idBytes = await DashHd.toIdBytes(hdkey);
@@ -721,8 +795,14 @@ if ("object" === typeof module) {
 
 /**
  * @typedef HDVersions
- * @prop {Number} private - 32-bit (4-byte) int (encodes to 'xprv' in base58)
- * @prop {Number} public - 32-bit (4-byte) int (encodes to 'xpub' in base58)
+ * @prop {Uint32} private - 'mainnet', 'testnet', 'xprv' or 'tprv', or 4-byte hex or uint32
+ * @prop {Uint32} public  - 'mainnet', 'testnet', 'xpub' or 'tpub', or 4-byte hex or uint32
+ */
+
+/**
+ * @typedef HDVersionsOption
+ * @prop {Uint32|String} [private] - 'mainnet', 'testnet', 'xprv' or 'tprv', or 4-byte hex or uint32
+ * @prop {Uint32|String} [public]  - 'mainnet', 'testnet', 'xpub' or 'tpub', or 4-byte hex or uint32
  */
 
 /**
@@ -825,8 +905,7 @@ if ("object" === typeof module) {
 
 /**
  * @typedef HDFromXKeyOptions
- * @prop {HDVersions} [versions]
- * @prop {String} xkey - base58check-encoded xkey
+ * @prop {HDVersionsOption} [versions]
  * @prop {Boolean} [bip32] - allow non-account depths
  * @prop {Boolean} [normalizePublicKey]
  * returns {Promise<HDKey>}
@@ -843,7 +922,7 @@ if ("object" === typeof module) {
  * @typedef HDFromSeedOptions
  * @prop {Number} [purpose] - 44 (BIP-44) by default
  * @prop {Number} [coinType] - 5 (DASH) by default
- * @prop {HDVersions} [versions] - mainnet ('xprv', 'xpub') by default
+ * @prop {HDVersionsOption} [versions] - mainnet ('xprv', 'xpub') by default
  */
 
 /**
@@ -904,12 +983,16 @@ if ("object" === typeof module) {
 /**
  * @callback HDToXPrv
  * @param {HDKey} hdkey
+ * @param {Object} [opts]
+ * @param {String|Uint32} [opts.version]
  * @returns {Promise<String>}
  */
 
 /**
  * @callback HDToXPub
  * @param {HDKey} hdkey
+ * @param {Object} [opts]
+ * @param {String|Uint32} [opts.version]
  * @returns {Promise<String>}
  */
 
@@ -965,4 +1048,8 @@ if ("object" === typeof module) {
 /**
  * @callback HDWipePrivates
  * @param {HDKey} hdkey
+ */
+
+/**
+ * @typedef {Number} Uint32
  */
