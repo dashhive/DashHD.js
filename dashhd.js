@@ -813,7 +813,7 @@ if ("object" === typeof module) {
 /**
  * @callback HDFingerprint
  * @param {Uint8Array} pubBytes - Public Key
- * @returns {Number}
+ * @returns {Promise<Number>}
  */
 
 /**
