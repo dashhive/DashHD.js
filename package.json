@@ -36,12 +36,10 @@
   ],
   "devDependencies": {
     "@dashincubator/secp256k1": "^1.7.1-5",
+    "dashkeys": "^1.1.3",
     "dashphrase": "^1.4.0",
     "mocha": "^10.2.0",
     "mocha-lcov-reporter": "0.0.1"
-  },
-  "dependencies": {
-    "dashkeys": "^1.1.1"
   },
   "scripts": {
     "lint": "npx -p typescript@4.x -- tsc -p ./jsconfig.json",
