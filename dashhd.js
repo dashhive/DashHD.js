@@ -708,7 +708,7 @@ var DashHd = ("object" === typeof module && exports) || {};
    * @param {Number} testInt - DashHd.TESTNET.private|DashHd.TESTNET.publi c
    * @returns {[String, Number]}
    */
-  function _versionToTuple(version, mainStr, mainInt, testInt, testStr) {
+  function _versionToTuple(version, mainStr, mainInt, testStr, testInt) {
     let isMainnet = version === mainStr || version === "mainnet";
     let isTestnet = version === testStr || version === "testnet";
     if (isMainnet) {
