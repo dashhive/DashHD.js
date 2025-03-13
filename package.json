@@ -3,6 +3,34 @@
   "version": "3.3.3",
   "description": "Manage HD Keys from HD Wallet Seed and Extended (xprv, xpub) Key Paths. Part of $DASH Tools.",
   "main": "dashhd.js",
+  "files": [
+    "dashhd.js",
+    "jsconfig.json"
+  ],
+  "type": "module",
+  "imports": {
+    "dashhd": "./dashhd.js",
+    "dashhd/": "./"
+  },
+  "exports": {
+    ".": "./dashhd.js",
+    "./*": "./*"
+  },
+  "scripts": {
+    "browser-test": "npx mochify@6 --wd -R spec",
+    "test": "mocha",
+    "unit": "mocha",
+    "coverage": "npx istanbul@0.4 cover ./node_modules/.bin/_mocha -- --reporter list test/*.js",
+    "coveralls": "npm run-script coverage && npx coveralls@3 < coverage/lcov.info",
+    "jshint": "npx -p jshint@2.x -- jshint -c ./.jshintrc ./*.js",
+    "lint": "npm run jshint && npm run tsc",
+    "prettier": "npx -p prettier@3.x -- prettier -w '**/*.{js,md}'",
+    "fmt": "npm run prettier",
+    "bump": "npm version -m \"chore(release): bump to v%s\"",
+    "tsc": "! npx -p typescript@5.x -- tsc -p ./jsconfig.json | grep '\\.js(\\d\\+,\\d\\+): error' | grep -v '\\<node_modules/'",
+    "reexport-types": "npx -p jswt@2.x -- reexport",
+    "prepublish": "npm run reexport-types"
+  },
   "browser": {
     "crypto": false
   },
@@ -30,25 +58,13 @@
     "url": "https://github.com/dashhive/dashhd.js/issues"
   },
   "homepage": "https://github.com/dashhive/dashhd.js",
-  "files": [
-    "dashhd.js",
-    "jsconfig.json"
-  ],
+  "dependencies": {
+    "dashkeys": "^1.1.5"
+  },
   "devDependencies": {
     "@dashincubator/secp256k1": "^1.7.1-5",
-    "dashkeys": "^1.1.5",
     "dashphrase": "^1.4.0",
     "mocha": "^10.2.0",
     "mocha-lcov-reporter": "0.0.1"
-  },
-  "scripts": {
-    "lint": "npx -p typescript@4.x -- tsc -p ./jsconfig.json",
-    "browser-test": "npx mochify@6 --wd -R spec",
-    "test": "mocha",
-    "unit": "mocha",
-    "coverage": "npx istanbul@0.4 cover ./node_modules/.bin/_mocha -- --reporter list test/*.js",
-    "coveralls": "npm run-script coverage && npx coveralls@3 < coverage/lcov.info",
-    "bump": "npm version -m \"chore(release): bump to v%s\"",
-    "fmt": "npx -p prettier@2.x -- prettier -w '**/*.{js,md}'"
   }
 }
